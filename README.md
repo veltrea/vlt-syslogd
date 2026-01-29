@@ -2,10 +2,9 @@
 
 **"Syslog messages should be UTF-8. Future-proof, lightweight, and international."**
 
-## 哲学とスローガン
-- **UTF-8 Only**: 「Syslog メッセージは UTF-8 で送るべきである」という強い信念のもと、レガシーな文字コード（SJIS/EUC等）のサポートをあえて排除します。
-- **No Legacy Baggage**: 過去のしがらみを捨て去ることで、実装のシンプルさと高い保守性、そして圧倒的な開発スピードを実現します。
-- **International by Default**: 最初から UTF-8 に一本化することで、追加コストなしに多言語・国際対応が完了した状態を提供します。
+## 開発の経緯
+Windows 環境で日本語（UTF-8）を文字化けせずに表示できるシンプルな Syslog サーバーが見当たらなかったため、Google Antigravity を用いて作成しました。
+実装の手間を省きシンプルに保つため、あえて Shift-JIS などのレガシーな文字コードはサポートせず、モダンな UTF-8 専用設計としています。
 
 ## 概要
 `vlt-syslogd` は、Windows 環境でも日本語や多言語が正しく表示・保存できる、Rust 製のモダンな Syslog サーバーです。軽量かつ高速で、無駄な変換処理による文字化けのリスクをゼロにします。
