@@ -1,0 +1,17 @@
+[package]
+name = "vlt-syslogd"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+eframe = "0.27"
+egui = "0.27"
+chrono = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+single-instance = "0.3"
+image = "0.25.9"
+
+[build-dependencies]
+winres = "0.1"
