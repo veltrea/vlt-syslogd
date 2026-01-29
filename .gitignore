@@ -20,3 +20,5 @@ logs/
 *.bak
 icons_backup_*/
 build_*.txt
+scripts/
+
