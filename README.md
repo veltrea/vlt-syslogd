@@ -60,3 +60,7 @@
    ```
    > **Note**: `target/release/vlt-syslogd.exe` が更新されます。
 
+## ライセンス (License)
+本ソフトウェアは [MIT License](LICENSE) の元で公開されています。
+
+

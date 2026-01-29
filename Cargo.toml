@@ -2,6 +2,8 @@
 name = "vlt-syslogd"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+authors = ["veltrea <veltrea@outlook.com>"]
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
