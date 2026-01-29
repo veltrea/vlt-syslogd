@@ -35,6 +35,10 @@ Windows 環境で日本語（UTF-8）を文字化けせずに表示できるシ�
 - [x] Phase 2: Syslog プロトコルのパースロジック実装 (Completed)
 - [x] Phase 3: ログフィルタリングと検索機能 (Completed)
 - [x] Phase 4: ファイル保存・永続化 (Completed)
+- [ ] Phase 5: Windows サービス化（バックグラウンド実行）
+- [ ] Phase 6: イベント通知機能
+    - 特定のメッセージ受信時のメール通知
+    - 特定条件でのスクリプト自動実行 (PowerShell / Batch)
 
 ## 使い方 (Usage)
 1. アプリケーションを起動すると、自動的に `0.0.0.0:514` (UDP) で待機を開始します。
