@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod parser;
 
 use eframe::egui;
@@ -203,7 +205,7 @@ async fn main() -> eframe::Result<()> {
         }
     });
 
-    let icon_data = include_bytes!("../vlt_syslogd_icon.png");
+    let icon_data = include_bytes!("../icons/vlt_syslogd_icon.png");
     let image = image::load_from_memory(icon_data).expect("Failed to load icon");
     let image = image.to_rgba8();
     let (width, height) = image.dimensions();
