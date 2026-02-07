@@ -1,27 +1,27 @@
 # vlt-syslog-server (Workspace)
 
-2バイト文字（CJK）環境での高い視認性と実用性を追求した、Windows 用 Syslog ソリューション。
+A Syslog solution for Windows, designed for high visibility and practical utility in multi-byte character (CJK) environments.
 
-## プロジェクトの構成と目的
+## Project Structure and Purpose
 
-本プロジェクトでは、用途に合わせて 2 つの形態を提供するためにディレクトリを分離・整理しました。
+This project is organized into two components to serve different use cases.
 
-### 1. [Portable](./Portable) (Released v0.1.0)
-- **ステータス**: リリース済み。健康と気力が続く限り、保守を継続。
-- **コンセプト**: 「USBメモリに忍ばせておく、エンジニアの万能ナイフ」。
-- **特徴**: GUI とサーバーエンジンを一体化した単一実行ファイル。インストール不要、インターネット不要で、現場のデバッグや一時的なログ収集に最高の機動力を提供します。
-- **想い**: 日々忙しく働くエンジニアとして、「こういうのがあれば便利だな」と思って自作しました。同じような仕事をしている皆さんにも、ぜひ気軽に使ってもらいたいと考えています。
+### 1. [Portable](./Portable) (Released v0.2.0)
+- **Status**: Released. Maintenance will continue as long as health and energy permit.
+- **Concept**: "An engineer's Swiss Army knife for your USB drive."
+- **Features**: A single binary integrating both a GUI and a server engine. Requires no installation or internet access, providing ultimate mobility for on-site debugging and temporary log collection.
+- **Philosophy**: Created by a busy engineer who thought, "This would be handy." I hope fellow engineers find it useful and easy to deploy.
 
 ### 2. [Server](./Server) (Under Development)
-- **ステータス**: 次期目標として開発中。
-- **コンセプト**: 「Windows サーバーでの本格安定運用」。
-- **特徴**: Windows サービスとしてバックグラウンドで動作する「エンジン」と、必要時のみ接続する「監視用フロントエンド」を分離。
-- **目的**: 常時稼働が求められる本番運用環境において、堅牢なログ収集基盤を提供します。
+- **Status**: Currently under development as the next milestone.
+- **Concept**: "Professional-grade stable operation for Windows Servers."
+- **Features**: Separates the background engine (running as a Windows Service) from the monitoring frontend (connected only when needed).
+- **Goal**: Provides a robust log collection infrastructure for production environments requiring 24/7 operation.
 
 ---
 
-## 開発の背景
+## Background
 
-長年愛用してきた既存の Windows 用軽量 Syslog サーバーが抱えていた「日本語表示の限界」を克服するため、Rust 言語でゼロから構築しました。
+Built from scratch using Rust to overcome the "Japanese display limitations" of existing lightweight Windows Syslog servers. It features "Tolerant Parsing" to accurately handle real-world data variations, including various encodings like Shift_JIS and UTF-8 with or without BOM.
 
-詳細は各ディレクトリの README を参照してください。
+For details, please refer to the README in each directory.
