@@ -2,6 +2,7 @@ mod parser;
 
 use std::error::Error;
 use std::ffi::OsString;
+use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::time::Duration;
 use tokio::net::UdpSocket;
@@ -22,11 +23,17 @@ const SERVICE_TYPE: ServiceType = ServiceType::OWN_PROCESS;
 define_windows_service!(ffi_service_main, syslog_service_main);
 
 fn main() -> Result<(), Box<dyn Error>> {
+    // 1. ロガーの初期化（プロセスの最優先事項）
+    if let Err(e) = init_logger() {
+        eprintln!("Failed to initialize logger: {}", e);
+    }
+
+    // 開発/デバッグ用：引数があればコマンドとして処理
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 1 {
         match args[1].as_str() {
             "run" => {
-                println!("Running as console app...");
+                log::info!("Running as console app mode...");
                 let rt = Runtime::new()?;
                 rt.block_on(run_syslog_server())?;
                 return Ok(());
@@ -38,13 +45,49 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
+    // Windows サービスディスパッチャの起動
     service_dispatcher::start(SERVICE_NAME, ffi_service_main)?;
     Ok(())
 }
 
 fn syslog_service_main(_arguments: Vec<OsString>) {
-    if let Err(_e) = run_service() {
+    // サービスのメインエントリーポイントでも再初期化を試みる（mainで失敗していた場合用）
+    let _ = init_logger();
+    
+    if let Err(e) = run_service() {
+        log::error!("Service runtime error: {}", e);
     }
+}
+
+/// Windows サービスとしてのロギング初期化
+fn init_logger() -> Result<(), Box<dyn Error>> {
+    let log_dir = if cfg!(windows) {
+        PathBuf::from(r"C:\ProgramData\vlt-syslogd\logs")
+    } else {
+        PathBuf::from("logs")
+    };
+
+    // ディレクトリ作成（管理者権限が必要な場合があるため、失敗しても続行を試みる）
+    if !log_dir.exists() {
+        let _ = std::fs::create_dir_all(&log_dir);
+    }
+
+    flexi_logger::Logger::try_with_str("info")?
+        .log_to_file(
+            flexi_logger::FileSpec::default()
+                .directory(log_dir)
+                .basename("vlt-syslog-srv")
+                .suffix("log"),
+        )
+        .format(flexi_logger::opt_format)
+        .rotate(
+            flexi_logger::Criterion::Size(10 * 1024 * 1024), // 10MB
+            flexi_logger::Naming::Numbers,
+            flexi_logger::Cleanup::KeepLogFiles(7),
+        )
+        .start()?;
+
+    Ok(())
 }
 
 fn run_service() -> Result<(), Box<dyn Error>> {
@@ -53,6 +96,7 @@ fn run_service() -> Result<(), Box<dyn Error>> {
     let event_handler = move |control_event| -> ServiceControlHandlerResult {
         match control_event {
             ServiceControl::Stop => {
+                log::info!("Received stop control from Service Manager");
                 tx.send(()).unwrap();
                 ServiceControlHandlerResult::NoError
             }
@@ -73,11 +117,17 @@ fn run_service() -> Result<(), Box<dyn Error>> {
         process_id: None,
     })?;
 
+    // 非同期ランタイムの起動
     let rt = Runtime::new()?;
     rt.block_on(async {
         tokio::select! {
-            _ = run_syslog_server() => {},
+            result = run_syslog_server() => {
+                if let Err(e) = result {
+                    log::error!("Syslog server loop error: {}", e);
+                }
+            },
             _ = tokio::task::spawn_blocking(move || rx.recv()) => {
+                log::info!("Service stopping gracefully...");
             }
         }
     });
@@ -99,19 +149,19 @@ async fn run_syslog_server() -> Result<(), Box<dyn Error>> {
     let addr = "0.0.0.0:514";
     let socket = UdpSocket::bind(addr).await?;
 
-    println!("vlt-syslog-srv engine started on {}", addr);
+    log::info!("vlt-syslog-srv engine started on {}", addr);
 
     let mut buf = [0u8; 8192];
     loop {
         let (size, src) = socket.recv_from(&mut buf).await?;
         let raw_msg = &buf[..size];
-        
+
         let parsed = parser::parse_syslog(raw_msg);
-        
-        let log_line = format!(
-            "[{}] [{:?}] [src:{}] [enc:{}] {}",
-            parsed.timestamp, parsed.severity, src, parsed.encoding, parsed.content
+
+        // サービス版：全受信メッセージをINFOレベルで記録
+        log::info!(
+            "[{:?}] [src:{}] [enc:{}] {}",
+            parsed.severity, src, parsed.encoding, parsed.content
         );
-        println!("{}", log_line);
     }
 }
