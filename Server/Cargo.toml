@@ -18,7 +18,9 @@ hex = "0.4"
 # サービス固有
 windows-service = "0.7"
 log = "0.4"
-flexi_logger = "0.29"
+flexi_logger = { version = "0.29", features = ["async", "trc"] }
+config = "0.14"
+toml = "0.8"
 
 [build-dependencies]
 winres = "0.1"
