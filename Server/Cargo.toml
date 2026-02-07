@@ -1,0 +1,24 @@
+[package]
+name = "vlt-syslog-srv"
+version = "0.2.0"
+edition = "2024"
+license = "MIT"
+authors = ["veltrea <veltrea@outlook.com>"]
+
+[dependencies]
+# 共通ロジック
+tokio = { version = "1", features = ["full"] }
+chrono = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+encoding_rs = "0.8"
+chardetng = "0.1"
+hex = "0.4"
+
+# サービス固有
+windows-service = "0.7"
+log = "0.4"
+flexi_logger = "0.29"
+
+[build-dependencies]
+winres = "0.1"
