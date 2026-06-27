@@ -1,12 +1,12 @@
 # vlt-syslog-server (Workspace)
 
-2バイト文字(CJK)環境での高い視認性と実用性を追求した、Windows / macOS / Linux 対応 Syslog ソリューション。
+2バイト文字(CJK)環境での高い視認性と実用性を追求した、Windows / macOS 対応 Syslog ソリューション。
 
 ## プロジェクトの構成と目的
 
 本プロジェクトでは、用途に合わせて 2 つの形態を提供するためにディレクトリを分離・整理しました。
 
-### 1. [Portable](./Portable) (Released v0.2.0)
+### 1. [Portable](./Portable) (Released v0.3.0)
 - **ステータス**: リリース済み。健康と気力が続く限り、保守を継続。
 - **コンセプト**: 「USBメモリに忍ばせておく、エンジニアの万能ナイフ」。
 - **特徴**: GUI とサーバーエンジンを一体化した単一実行ファイル。インストール不要、インターネット不要で、現場のデバッグや一時的なログ収集に最高の機動力を提供します。
@@ -28,9 +28,9 @@
 
 ---
 
-## macOS / Linux でのビルドと実行
+## macOS でのビルドと実行
 
-GUI 版（ルートクレートと `Portable`）は Windows / macOS / Linux で動作します。日本語フォントはプラットフォームごとに自動判定され、macOS ではヒラギノ角ゴシック、Linux では Noto Sans CJK / IPA フォントを読み込みます。そのため、追加設定なしで2バイト文字が正しく表示されます。
+GUI 版（ルートクレートと `Portable`）は Windows / macOS で動作します。日本語フォントはプラットフォームごとに自動判定され、macOS ではヒラギノ角ゴシックを読み込みます。そのため、追加設定なしで2バイト文字が正しく表示されます。
 
 ### 前提条件
 
@@ -47,9 +47,9 @@ cargo build --release        # binary: target/release/vlt-syslog-portable
 cargo build --release        # from the repository root; binary: target/release/vlt-syslogd
 ```
 
-### 待ち受けポート（514 は macOS / Linux で root 権限が必要）
+### 待ち受けポート（514 は macOS で root 権限が必要）
 
-514 番は標準の syslog ポートですが、macOS と Linux では 1024 未満は特権ポートのため root 権限が必要です。bind の成否（成功・失敗）はログ表示の最初の行に表示されます。
+514 番は標準の syslog ポートですが、macOS では 1024 未満は特権ポートのため root 権限が必要です。bind の成否（成功・失敗）はログ表示の最初の行に表示されます。
 
 ```bash
 # Option A: listen on the standard port 514 with root
@@ -61,9 +61,9 @@ VLT_SYSLOGD_BIND=0.0.0.0:5514 ./target/release/vlt-syslog-portable
 
 `VLT_SYSLOGD_BIND` は両方の GUI 版で待ち受けアドレスを上書きします。
 
-### サーバーエンジン（macOS / Linux ではコンソール常駐デーモン）
+### サーバーエンジン（macOS ではコンソール常駐デーモン）
 
-`Server` クレートは Windows ではサービスとして動作します。macOS と Linux では、同じエンジンがフォアグラウンドのコンソール常駐デーモンとしてビルド・動作します（`launchd` や `systemd` での管理を想定）。待ち受けアドレスは `config.toml`（初回起動時にカレントディレクトリへ生成）から読み込まれます。
+`Server` クレートは Windows ではサービスとして動作します。macOS では、同じエンジンがフォアグラウンドのコンソール常駐デーモンとしてビルド・動作します（`launchd` での管理を想定）。待ち受けアドレスは `config.toml`（初回起動時にカレントディレクトリへ生成）から読み込まれます。
 
 ```bash
 cd Server
