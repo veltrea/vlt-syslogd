@@ -55,7 +55,7 @@ messages=(
   '<11>nginx: 198.51.100.8 - "POST /login HTTP/1.1" 502 0 upstream connect timed out'
   '<19>postfix/smtpd[7781]: NOQUEUE: reject: RCPT from unknown[198.51.100.23]: 554 5.7.1'
   # severity 6 (Info, green) — keep the green flowing
-  '<134>dhcpd: DHCPACK on 192.0.2.87 to XX:XX:XX:XX:XX:XX (laptop-09) via eth0'
+  '<134>dhcpd: DHCPACK on 192.0.2.87 (client laptop-09) via eth0'
   '<30>systemd[1]: Reloaded nginx.service.'
   # severity 2 (Critical, red)
   '<2>kernel: Out of memory: Killed process 8123 (java) total-vm:4194304kB'
