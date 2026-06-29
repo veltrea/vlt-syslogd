@@ -1,8 +1,8 @@
 import os
 from PIL import Image
 
-src_path = r"E:\マイドライブ\dev\vlt-syslog\vlt-syslogd\icons_backup_20260129_1915\vlt_syslogd_icon.png"
-dst_path = r"E:\マイドライブ\dev\vlt-syslog\vlt-syslogd\icons\vlt_syslogd_icon_256px.png"
+src_path = r"E:\マイドライブ\dev\vlt-syslogd\icons_backup_20260129_1915\vlt_syslogd_icon.png"
+dst_path = r"E:\マイドライブ\dev\vlt-syslogd\icons\vlt_syslogd_icon_256px.png"
 
 print(f"Opening: {src_path}")
 

@@ -1,0 +1,35 @@
+[package]
+name = "vlt-syslogd-console"
+version = "0.4.0"
+edition = "2024"
+license = "MIT"
+authors = ["veltrea <veltrea@outlook.com>"]
+
+[[bin]]
+name = "vlt-syslogd-console"
+path = "src/main.rs"
+
+[dependencies]
+eframe = "0.27"
+egui = "0.27"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+# 編集メニューの「ペースト」で OS クリップボードを egui へ流すため。
+arboard = "3"
+# ウィンドウアイコン(Windows/Linux)。macOS の Dock は .app の icns を使う。
+image = "0.25.9"
+
+# macOS のネイティブメニューバー(画面最上部)構築用。
+# Tauri の内部部品(muda/tao/wry)は使わず、AppKit を直接叩く。
+[target.'cfg(target_os = "macos")'.dependencies]
+cocoa = "0.25"
+objc = "0.2"
+
+[build-dependencies]
+winres = "0.1"
+
+# objc 0.2 / cocoa のマクロが展開時に cfg(cargo-clippy) を撒くため、未知 cfg 警告が大量に出る。
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("cargo-clippy"))'] }

@@ -1,41 +1,41 @@
-# Syslog検証最終報告書：実世界ツールにおけるエンコーディングの挙動
+# Syslog Verification Final Report: Encoding Behavior in Real-World Tools
 
-## 1. 検証の目的
-RFC 5424の仕様（UTF-8時はBOM必須）と、実世界のSyslog送信ユーティリティの挙動に乖離があることを実証し、実装した「寛容なパース」の有効性を確認する。
+## 1. Purpose of Verification
+To demonstrate the discrepancy between the RFC 5424 specification (BOM required for UTF-8) and the actual behavior of real-world Syslog sending utilities, and to confirm the effectiveness of the implemented "Tolerant Parsing."
 
-## 2. 検証環境
-- **サーバー**: `vlt-syslog-portable` (Mac 192.0.2.22)
-- **クライアント1 (Mac)**: `nc` (netcat), `logger`
-- **クライアント2 (Windows)**: `WIN-CLIENT` (PowerShell .NET)
+## 2. Verification Environment
+- **Server**: `vlt-syslogd-portable` (Mac 192.0.2.22)
+- **Client 1 (Mac)**: `nc` (netcat), `logger`
+- **Client 2 (Windows)**: `WIN-CLIENT` (PowerShell .NET)
 
-## 3. 検証結果：実機からの「生のデータ」解析
+## 3. Verification Results: "Raw Data" Analysis from Actual Machines
 
-`logs/debug_raw.log` に記録された受信パケット（HEX）の解析結果です。
+Analysis of received packets (HEX) recorded in `logs/debug_raw.log`.
 
-| 送信ツール / 形式 | 期待される挙動 (RFC) | 実際の挙動 (RAW) | 判定結果 | 備考 |
+| Sending Tool / Format | Expected Behavior (RFC) | Actual Behavior (RAW) | Result | Remarks |
 | :--- | :--- | :--- | :--- | :--- |
-| **Mac `nc` (UTF-8)** | BOMあり | **BOMなし** | ✅ UTF-8 (Implicit) | 手動送信でもBOM忘れは頻発する |
-| **Windows PowerShell** | BOMあり | **BOMなし** | ✅ UTF-8 (Implicit) | .NET標準の挙動によるBOM欠落を確認 |
-| **MegaLog / 各種SD** | 指定通り | 指定通り | ✅ 各種Charset | SD `charset` パラメータは高い信頼性 |
-| **Legacy (RFC 3164)** | 規定なし | BOMなし(SJIS) | ✅ Shift_JIS (Guess) | 統計的推定によりSJISを正しく救済 |
+| **Mac `nc` (UTF-8)** | With BOM | **No BOM** | ✅ UTF-8 (Implicit) | Forgetting BOM is common even in manual transmission |
+| **Windows PowerShell** | With BOM | **No BOM** | ✅ UTF-8 (Implicit) | Confirmed BOM omission due to standard .NET behavior |
+| **MegaLog / Various SD** | As specified | As specified | ✅ Various Charset | SD `charset` parameter has high reliability |
+| **Legacy (RFC 3164)** | Not specified | No BOM (SJIS) | ✅ Shift_JIS (Guess) | Correctly recovered SJIS via statistical estimation |
 
-## 4. 「BOMの罠」に関する考察と解決策
-今回の検証で、**「BOMの有無だけに頼るパースは、実世界では通用しない」**ことが明確になりました。
+## 4. Insights and Solutions Regarding the "BOM Trap"
+This verification clearly showed that **"Parsing that relies solely on the presence of a BOM does not work in the real world."**
 
-### 実態
-- Windowsの標準的な送信（PowerShell等）では、UTF-8であってもBOMを付けないのが一般的。
-- これを「BOMがないからSJIS（または不正なデータ）だ」と切り捨てると、現代的なシステムのログが全て文字化けする。
+### The Reality
+- In standard Windows transmissions (PowerShell, etc.), it is common to omitted the BOM even for UTF-8.
+- If we discard this as "No BOM, therefore it's SJIS (or invalid data)," logs from modern systems will all be garbled.
 
-### 私たちの解決策（三段構えのロジック）
-1. **BOM検出**: あれば100% UTF-8として扱う。
-2. **SD(Structured Data)パース**: `charset` タグ（`UTF-8`, `MSG-UTF8`, `Shift_JIS`等）を解析して救済。
-3. **統計的推定 (最後の砦)**: `chardetng` により、バイト列の特徴から日本語環境に最適な判定を下す。
+### Our Solution (Three-Tiered Logic)
+1. **BOM Detection**: If present, treat as 100% UTF-8.
+2. **SD (Structured Data) Parsing**: Analyze `charset` tags (`UTF-8`, `MSG-UTF8`, `Shift_JIS`, etc.) for recovery.
+3. **Statistical Estimation (Final Stand)**: Use `chardetng` to make the best judgment for CJK environments based on byte sequence characteristics.
 
-## 5. 結論
-`vlt-syslog-portable` は、RFCの理想を尊重しつつ、実世界の「不完全なデータ」に対しても極めて高い耐性を持つことが実証されました。これにより、マルチプラットフォーム混在環境においても、文字化けのない安定したログ監視が可能です。
+## 5. Conclusion
+It has been demonstrated that `vlt-syslogd-portable` has extremely high resilience against "imperfect data" in the real world while respecting RFC ideals. This enables stable log monitoring without character corruption even in mixed multi-platform environments.
 
 ---
 
 > [!IMPORTANT]
-> **グローバルユーザーの皆様へのお願い**
-> 現在、開発者のテスト環境は**日本語環境のみ**となっております。主要なエンコーディングへの対応は確認しておりますが、各地域（英語、韓国語、中国語、ベトナム語など）で表示の不具合や「文字化け」が発生した場合は、ぜひレポートをお寄せください。皆様のフィードバックをお待ちしております。
+> **A Request to Our Global Users**
+> The developer currently only has a **Japanese language environment** for testing. While we have confirmed support for major encodings, we would be very grateful for your reports if you encounter any display issues or "garbled text" in your specific region (English, Korean, Chinese, Vietnamese, etc.). Your feedback helps us make this tool better for everyone!

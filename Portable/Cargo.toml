@@ -1,9 +1,15 @@
 [package]
-name = "vlt-syslog-portable"
-version = "0.3.0"
+name = "vlt-syslogd-portable"
+version = "0.4.0"
 edition = "2024"
 license = "MIT"
 authors = ["veltrea <veltrea@outlook.com>"]
+
+[features]
+# 既定(feature なし) = App 版: データを OS 標準のユーザーデータ領域に置く。
+# `--features portable` = Portable 版: データを実行ファイルの隣に置く(USB 持ち歩き)。
+default = []
+portable = []
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
@@ -12,11 +18,26 @@ egui = "0.27"
 chrono = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+toml = "0.8"
+rfd = "0.14"
 single-instance = "0.3"
 image = "0.25.9"
 encoding_rs = "0.8"
 chardetng = "0.1"
 hex = "0.4"
+# クリップボード読み取り(編集メニューの「ペースト」で OS クリップボードを egui へ流すため)
+arboard = "3"
+
+# macOS のネイティブメニューバー(画面最上部)構築用。
+# Tauri の内部部品(muda/tao/wry)は使わず、AppKit を直接叩く。
+[target.'cfg(target_os = "macos")'.dependencies]
+cocoa = "0.25"
+objc = "0.2"
 
 [build-dependencies]
 winres = "0.1"
+
+# objc 0.2 / cocoa のマクロが展開時に cfg(cargo-clippy) を撒くため、未知 cfg 警告が大量に出る。
+# crate 側の都合なので「想定済みの cfg」として宣言してノイズを消す。
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("cargo-clippy"))'] }

@@ -22,7 +22,8 @@ logs/
 *.exe
 *.bak
 
-# macOS build artifacts (distributed via GitHub Releases, not committed)
+# macOS noise + build artifacts (distributed via GitHub Releases, not committed)
+.DS_Store
 *.app/
 dist/
 config.toml
@@ -37,9 +38,11 @@ open_fw_port.bat.tmp
 vlt-monitor-tray/
 icons_backup_*/
 build_*.txt
-scripts/
 BLOG/
 test_tool/
 
 *.zip
 IDEA/
+CLAUDE.md
+private/
+scripts/publish.sh

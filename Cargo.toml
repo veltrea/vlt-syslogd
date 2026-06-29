@@ -1,18 +1,12 @@
-[package]
-name = "vlt-syslogd"
-version = "0.3.0"
-edition = "2024"
-license = "MIT"
-authors = ["veltrea <veltrea@outlook.com>"]
-
-[dependencies]
-tokio = { version = "1", features = ["full"] }
-eframe = "0.27"
-egui = "0.27"
-chrono = "0.4"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-single-instance = "0.3"
-image = "0.25.9"
-
-
+# vlt-syslogd ワークスペース
+#
+# 3つのメンバークレートで構成する(OS では分けない。動作モデルで分ける):
+#   - Portable : GUI ビューア。自分で syslog を待ち受ける単体版。
+#   - Server   : 標準 514 で待ち受ける常駐デーモン(エンジン)。
+#   - Console  : GUI フロントエンド。常駐サービス(Server)に TCP 接続してログを表示する。
+#
+# 共通ロジック(syslog パーサ等)は各クレート内に持つ。OS 差は各クレートの
+# platform 系モジュールに集約し、ここでは分割しない。
+[workspace]
+resolver = "2"
+members = ["Portable", "Server", "Console"]

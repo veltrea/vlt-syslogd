@@ -1,10 +1,13 @@
 mod parser;
 mod config;
+mod platform;
 
 use std::error::Error;
 use std::panic;
-use tokio::net::UdpSocket;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::net::{TcpListener, UdpSocket};
 use tokio::runtime::Runtime;
+use tokio::sync::broadcast;
 
 // --- Windows サービス連携（Windows ターゲットでのみコンパイル）---
 #[cfg(windows)]
@@ -25,7 +28,7 @@ use windows_service::{
 };
 
 #[cfg(windows)]
-const SERVICE_NAME: &str = "vlt-syslog-srv";
+const SERVICE_NAME: &str = "vlt-syslogd-srv";
 #[cfg(windows)]
 const SERVICE_TYPE: ServiceType = ServiceType::OWN_PROCESS;
 
@@ -68,7 +71,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 return Ok(());
             }
             _ => {
-                println!("Usage: vlt-syslog-srv [run]");
+                println!("Usage: vlt-syslogd-srv [run]");
                 #[cfg(windows)]
                 println!("Wait for Windows Service Manager if no args.");
                 #[cfg(not(windows))]
@@ -88,7 +91,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         // macOS / Linux: フォアグラウンドのコンソール常駐サーバとして動作
         // （launchd / systemd から起動する想定。Ctrl+C で停止）
         log::info!("Running as console daemon (non-Windows)...");
-        println!("vlt-syslog-srv: console daemon mode. Press Ctrl+C to stop.");
+        println!("vlt-syslogd-srv: console daemon mode. Press Ctrl+C to stop.");
         let rt = Runtime::new()?;
         rt.block_on(run_syslog_server(config))?;
     }
@@ -138,7 +141,7 @@ fn init_logger(
         .log_to_file(
             flexi_logger::FileSpec::default()
                 .directory(log_dir)
-                .basename("vlt-syslog-srv")
+                .basename("vlt-syslogd-srv")
                 .suffix("log"),
         )
         .write_mode(flexi_logger::WriteMode::Async) // 非同期書き込みでパフォーマンス向上
@@ -210,10 +213,38 @@ fn run_service(config: config::Config) -> Result<(), Box<dyn Error>> {
 }
 
 async fn run_syslog_server(config: config::Config) -> Result<(), Box<dyn Error>> {
-    let addr = &config.server.bind_addr;
-    let socket = UdpSocket::bind(addr).await?;
+    let addr = config.server.bind_addr.clone();
+    let socket = UdpSocket::bind(&addr).await?;
 
-    log::info!("vlt-syslog-srv engine started on {}", addr);
+    log::info!("vlt-syslogd-srv engine started on {}", addr);
+
+    // GUI フロントエンドへ受信ログを配信する broadcast チャネル。
+    // 購読者(接続中の GUI)がいなければ送信は黙って捨てられる。
+    // これによりサービス本体は GUI の有無に一切依存せず動き続ける。
+    let (stream_tx, _) = broadcast::channel::<String>(1024);
+
+    // TCP 配信タスクを起動する。listen に失敗しても(ポート使用中など)
+    // サービス本体(UDP 受信 + ファイルログ)は止めない。配信だけが無効になる。
+    {
+        let stream_addr = config.server.stream_addr.clone();
+        let stream_tx = stream_tx.clone();
+        tokio::spawn(async move {
+            if let Err(e) = run_stream_server(&stream_addr, stream_tx).await {
+                log::error!("Stream listener on {} terminated: {}", stream_addr, e);
+            }
+        });
+    }
+
+    // 設定の取得/変更を受け付ける制御サーバを起動する。listen に失敗しても
+    // サービス本体(UDP 受信 + 配信)は止めない。制御だけが無効になる。
+    {
+        let control_addr = config.server.control_addr.clone();
+        tokio::spawn(async move {
+            if let Err(e) = run_control_server(&control_addr).await {
+                log::error!("Control listener on {} terminated: {}", control_addr, e);
+            }
+        });
+    }
 
     let mut buf = [0u8; 8192];
     loop {
@@ -227,5 +258,126 @@ async fn run_syslog_server(config: config::Config) -> Result<(), Box<dyn Error>>
             "[{:?}] [src:{}] [enc:{}] {}",
             parsed.severity, src, parsed.encoding, parsed.content
         );
+
+        // GUI フロントエンドへ JSON Lines(1メッセージ=1行 JSON)で配信する。
+        // 購読者がいなければ send は Err になるが、その場合は捨ててよい。
+        if let Ok(json) = serde_json::to_string(&parsed) {
+            let _ = stream_tx.send(json);
+        }
+    }
+}
+
+/// GUI フロントエンド向けの TCP 配信サーバ(JSON Lines)。
+///
+/// ループバック(既定 127.0.0.1:5141)で listen し、接続してきた各 GUI クライアントへ
+/// broadcast チャネルの JSON 行を流す。接続ごとに独立したタスクで購読する。
+/// 外部公開しない前提なので認証は持たない(bind を 0.0.0.0 等にする運用は想定しない)。
+async fn run_stream_server(
+    addr: &str,
+    stream_tx: broadcast::Sender<String>,
+) -> Result<(), Box<dyn Error>> {
+    let listener = TcpListener::bind(addr).await?;
+    log::info!("vlt-syslogd-srv stream listener started on {}", addr);
+
+    loop {
+        let (mut socket, peer) = listener.accept().await?;
+        log::info!("GUI client connected from {}", peer);
+        let mut rx = stream_tx.subscribe();
+
+        // 接続クライアントごとに購読タスクを分離する。
+        // 1 クライアントの切断・遅延が他クライアントや本体に波及しないようにする。
+        tokio::spawn(async move {
+            loop {
+                match rx.recv().await {
+                    Ok(line) => {
+                        // JSON 行 + 改行。書き込み失敗は切断とみなしてタスク終了。
+                        if socket.write_all(line.as_bytes()).await.is_err()
+                            || socket.write_all(b"\n").await.is_err()
+                        {
+                            break;
+                        }
+                    }
+                    // 受信が追いつかず取りこぼした場合。最新を優先してスキップ継続。
+                    Err(broadcast::error::RecvError::Lagged(n)) => {
+                        log::warn!("GUI client {} lagged; skipped {} messages", peer, n);
+                        continue;
+                    }
+                    // 送信側(サービス本体)が終了した場合。
+                    Err(broadcast::error::RecvError::Closed) => break,
+                }
+            }
+            log::info!("GUI client {} disconnected", peer);
+        });
+    }
+}
+
+/// Console(GUI フロントエンド)からの設定取得/変更を受け付ける制御サーバ。
+///
+/// ループバック(既定 127.0.0.1:5142)で listen し、接続ごとに 1 行 JSON のリクエストを
+/// 受けて 1 行 JSON のレスポンスを返す(行区切り JSON / JSONL。Content-Length は付けない)。
+/// stream と同じく外部公開しない前提なので認証は持たない。
+///
+/// set_config は config.toml を書き換えるのみで、反映はサービス再起動で行う方針
+/// (動作中プロセスのホットリロードはしない)。レスポンスで restart_required を返す。
+async fn run_control_server(addr: &str) -> Result<(), Box<dyn Error>> {
+    let listener = TcpListener::bind(addr).await?;
+    log::info!("vlt-syslogd-srv control listener started on {}", addr);
+
+    loop {
+        let (socket, peer) = listener.accept().await?;
+        tokio::spawn(async move {
+            let mut reader = BufReader::new(socket);
+            let mut line = String::new();
+            match reader.read_line(&mut line).await {
+                Ok(0) => return, // 何も送られてこなかった。
+                Ok(_) => {}
+                Err(e) => {
+                    log::warn!("control read error from {}: {}", peer, e);
+                    return;
+                }
+            }
+            let response = handle_control(&line);
+            let mut socket = reader.into_inner();
+            if socket.write_all(response.as_bytes()).await.is_err()
+                || socket.write_all(b"\n").await.is_err()
+            {
+                log::warn!("control write failed to {}", peer);
+            }
+        });
+    }
+}
+
+/// 制御リクエスト 1 行を処理してレスポンス JSON(1 行ぶん)を返す。
+fn handle_control(line: &str) -> String {
+    let err = |msg: String| serde_json::json!({ "ok": false, "error": msg }).to_string();
+
+    let value: serde_json::Value = match serde_json::from_str(line.trim()) {
+        Ok(v) => v,
+        Err(e) => return err(format!("invalid json: {e}")),
+    };
+
+    match value.get("cmd").and_then(|c| c.as_str()) {
+        Some("get_config") => match config::load_config() {
+            Ok(cfg) => serde_json::json!({ "ok": true, "config": cfg }).to_string(),
+            Err(e) => err(format!("failed to load config: {e}")),
+        },
+        Some("set_config") => {
+            let cfg_value = match value.get("config") {
+                Some(v) => v.clone(),
+                None => return err("missing 'config' field".to_string()),
+            };
+            let cfg: config::Config = match serde_json::from_value(cfg_value) {
+                Ok(c) => c,
+                Err(e) => return err(format!("invalid config: {e}")),
+            };
+            match config::save_config(&cfg) {
+                Ok(()) => {
+                    log::info!("config updated via control port (restart required to apply)");
+                    serde_json::json!({ "ok": true, "restart_required": true }).to_string()
+                }
+                Err(e) => err(format!("failed to save config: {e}")),
+            }
+        }
+        other => err(format!("unknown cmd: {:?}", other)),
     }
 }

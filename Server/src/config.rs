@@ -12,6 +12,26 @@ pub struct Config {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ServerConfig {
     pub bind_addr: String,
+    /// GUI フロントエンドへ受信ログを配信する TCP アドレス(JSON Lines)。
+    /// 既定はループバック限定(127.0.0.1)で外部には一切公開しない。
+    /// 既存 config.toml(stream_addr 無し)との互換のため serde default で補う。
+    #[serde(default = "default_stream_addr")]
+    pub stream_addr: String,
+    /// GUI フロントエンド(Console)からの設定取得/変更を受け付ける制御 TCP アドレス。
+    /// 既定はループバック限定(127.0.0.1)で外部には一切公開しない。
+    /// 既存 config.toml(control_addr 無し)との互換のため serde default で補う。
+    #[serde(default = "default_control_addr")]
+    pub control_addr: String,
+}
+
+/// stream_addr の既定値。ループバックの 5141 番。
+fn default_stream_addr() -> String {
+    "127.0.0.1:5141".to_string()
+}
+
+/// control_addr の既定値。ループバックの 5142 番。
+fn default_control_addr() -> String {
+    "127.0.0.1:5142".to_string()
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -26,6 +46,8 @@ impl Default for Config {
         Self {
             server: ServerConfig {
                 bind_addr: "0.0.0.0:514".to_string(),
+                stream_addr: default_stream_addr(),
+                control_addr: default_control_addr(),
             },
             logging: LoggingConfig {
                 level: "info".to_string(),
@@ -54,18 +76,23 @@ pub fn load_config() -> Result<Config, Box<dyn Error>> {
     Ok(config)
 }
 
-pub fn get_config_path() -> PathBuf {
-    if cfg!(windows) {
-        PathBuf::from(r"C:\ProgramData\vlt-syslogd\config.toml")
-    } else {
-        PathBuf::from("config.toml")
+/// 設定を config.toml に書き出す(親ディレクトリが無ければ作成)。
+/// Console の制御ポートからの set_config で使う。
+pub fn save_config(config: &Config) -> Result<(), Box<dyn Error>> {
+    let config_path = get_config_path();
+    if let Some(parent) = config_path.parent() {
+        fs::create_dir_all(parent)?;
     }
+    let toml_str = toml::to_string_pretty(config)?;
+    fs::write(&config_path, toml_str)?;
+    Ok(())
+}
+
+// 保存先の決定は platform モジュールに一元化した(CWD 相対をやめ、起動方法に依存しない)。
+pub fn get_config_path() -> PathBuf {
+    crate::platform::config_path()
 }
 
 pub fn get_log_dir() -> PathBuf {
-    if cfg!(windows) {
-        PathBuf::from(r"C:\ProgramData\vlt-syslogd\logs")
-    } else {
-        PathBuf::from("logs")
-    }
+    crate::platform::log_dir()
 }

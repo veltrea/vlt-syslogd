@@ -1,4 +1,4 @@
-# vlt-syslog-server (Workspace)
+# vlt-syslogd-server (Workspace)
 
 A Syslog solution for Windows and macOS, designed for high visibility and practical utility in multi-byte character (CJK) environments.
 
@@ -28,9 +28,28 @@ For details, please refer to the README in each directory.
 
 ---
 
+## Downloads (macOS)
+
+Prebuilt, ad-hoc–signed macOS bundles are produced by `./Portable/build-macos.sh` into `dist/`. The GUI ships in two variants that differ only in **where they keep their data** — pick the one that matches how you run it:
+
+| Variant | Data location | Best for | Artifact |
+|---|---|---|---|
+| **App** | `~/Library/Application Support/vlt-syslogd/` | Dropping into `/Applications`, everyday desktop use | `vlt-syslogd-macos-app-v<ver>.zip` |
+| **Portable** | next to the `.app` itself | Carrying on a USB stick, zero system footprint | `vlt-syslogd-macos-portable-v<ver>.zip` |
+
+Both run from anywhere without admin rights. On macOS (Mojave and later), binding the standard syslog port `514` on `0.0.0.0` does **not** require root, so you can just double-click and go. (Binding a *specific* interface such as `127.0.0.1:514` still needs root — see the listening-port notes below.)
+
+Downloaded apps are quarantined by Gatekeeper on first launch. The **Portable** variant especially keeps its data next to the app, which App Translocation breaks while the app is quarantined, so clear the quarantine flag once:
+
+```bash
+xattr -dr com.apple.quarantine vlt-syslogd-portable.app
+```
+
+Alternatively, right-click the app and choose **Open** the first time. To receive on `514` from a device that only sends to a fixed port while something else holds the port — or to run a boot-time daemon — use the Server variant.
+
 ## Building & Running on macOS
 
-The GUI builds (the root crate and `Portable`) run on Windows and macOS. The Japanese font is auto-detected per platform — on macOS it loads Hiragino Kaku Gothic — so multi-byte text renders correctly without any extra setup.
+The GUI build (`Portable`) runs on Windows and macOS. The Japanese font is auto-detected per platform — on macOS it loads Hiragino Kaku Gothic — so multi-byte text renders correctly without any extra setup.
 
 ### Prerequisites
 
@@ -39,34 +58,38 @@ The GUI builds (the root crate and `Portable`) run on Windows and macOS. The Jap
 ### Build
 
 ```bash
-# Portable (GUI + server engine in a single binary — recommended)
+# GUI (single binary). Default = App build; add the feature for the Portable build.
 cd Portable
-cargo build --release        # binary: target/release/vlt-syslog-portable
-
-# Root crate (the basic, UTF-8 only GUI)
-cargo build --release        # from the repository root; binary: target/release/vlt-syslogd
+cargo build --release                       # App build (data in ~/Library/Application Support)
+cargo build --release --features portable   # Portable build (data next to the binary)
 ```
 
-### Listening port (514 needs root on macOS)
+To produce ready-to-ship, ad-hoc–signed macOS `.app` bundles + zips for both variants in `dist/`:
 
-Port 514 is the standard syslog port, but on macOS ports below 1024 are privileged and require root. The bind result (success or failure) is shown in the first row of the log view.
+```bash
+./Portable/build-macos.sh
+```
+
+### Listening port
+
+Port 514 is the standard syslog port. On macOS (Mojave and later) you can bind it on `0.0.0.0` **without** root; only binding a *specific* interface (e.g. `127.0.0.1`) still requires root. On Linux, ports below 1024 require root or `CAP_NET_BIND_SERVICE`. The bind result (success or failure) is shown in the first row of the log view, and if a bind fails you can pick another port from the Preferences window (Settings → Preferences).
 
 ```bash
 # Option A: listen on the standard port 514 with root
-sudo ./target/release/vlt-syslog-portable
+sudo ./target/release/vlt-syslogd-portable
 
 # Option B: listen on a non-privileged port without root
-VLT_SYSLOGD_BIND=0.0.0.0:5514 ./target/release/vlt-syslog-portable
+VLT_SYSLOGD_BIND=0.0.0.0:5514 ./target/release/vlt-syslogd-portable
 ```
 
-`VLT_SYSLOGD_BIND` overrides the listen address for both GUI builds.
+`VLT_SYSLOGD_BIND` overrides the listen address for the GUI build.
 
 ### Server engine (console daemon on macOS)
 
-The `Server` crate runs as a Windows Service on Windows. On macOS it builds and runs the same engine as a foreground console daemon (intended to be supervised by `launchd`). The listen address is read from `config.toml` (created on first run in the current directory).
+The `Server` crate runs as a Windows Service on Windows. On macOS it builds and runs the same engine as a foreground console daemon (intended to be supervised by `launchd`). The listen address is read from `config.toml`, which is created on first run in the platform data directory — macOS: `/usr/local/var/vlt-syslogd`, Linux: `/var/lib/vlt-syslogd`, Windows: `C:\ProgramData\vlt-syslogd`. Set `VLT_SYSLOGD_DATA_DIR` to override this location.
 
 ```bash
 cd Server
 cargo build --release
-./target/release/vlt-syslog-srv run
+./target/release/vlt-syslogd-srv run
 ```
