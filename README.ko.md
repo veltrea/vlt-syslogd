@@ -1,6 +1,18 @@
-# vlt-syslogd-server (워크스페이스)
+# Veltrea Syslog Server
+
+*워크스페이스 · 패키지 이름: `vlt-syslogd`*
 
 2바이트 문자(CJK) 환경에서의 높은 가독성과 실용성을 추구한 Windows용 Syslog 솔루션입니다.
+
+## 스크린샷
+
+![멀티바이트(CJK) 메시지가 깔끔하게 표시된 메인 화면](DOCS/assets/main_window.png)
+
+*메인 화면 — 실시간 로그 표시. ASCII와 함께 멀티바이트(CJK) 메시지가 올바르게 표시됩니다.*
+
+![수신 포트와 로그 저장 위치를 설정하는 환경 설정 대화상자](DOCS/assets/preferences_dialog.png)
+
+*환경 설정 — 수신 포트와 로그 저장 위치를 설정할 수 있습니다.*
 
 ## 프로젝트의 구성 및 목적
 

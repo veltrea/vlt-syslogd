@@ -1,4 +1,6 @@
-# vlt-syslogd-srv (Server Engine)
+# Veltrea Syslog Server — Server Engine
+
+*パッケージ名: `vlt-syslogd-srv`*
 
 Windows サーバーで 24 時間安定稼働することを目的とした、サービス版 Syslog サーバーエンジン。
 

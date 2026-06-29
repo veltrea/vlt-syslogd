@@ -1,6 +1,18 @@
-# vlt-syslogd-server (工作區)
+# Veltrea Syslog Server
+
+*工作區 · 套件名稱: `vlt-syslogd`*
 
 專為 Windows 設計s的 Syslog 解決方案，致力於在多位元組字元 (CJK) 環境中提供極高的可視性與實用性。
+
+## 螢幕截圖
+
+![多位元組 (CJK) 訊息清晰顯示的主視窗](DOCS/assets/main_window.png)
+
+*主視窗 — 即時記錄檢視。多位元組 (CJK) 訊息與 ASCII 文字一同正確顯示。*
+
+![設定接收連接埠與記錄儲存位置的偏好設定對話框](DOCS/assets/preferences_dialog.png)
+
+*偏好設定 — 可設定接收連接埠與記錄的儲存位置。*
 
 ## 專案結構與目標
 

@@ -1,6 +1,18 @@
-# vlt-syslogd-server (工作区)
+# Veltrea Syslog Server
+
+*工作区 · 包名: `vlt-syslogd`*
 
 专为 Windows 设计的 Syslog 解决方案，致力于在双字节字符 (CJK) 环境中提供极高的可视性与实用性。
+
+## 屏幕截图
+
+![多字节 (CJK) 消息清晰显示的主窗口](DOCS/assets/main_window.png)
+
+*主窗口 — 实时日志查看。多字节 (CJK) 消息与 ASCII 文本一同正确显示。*
+
+![设置监听端口与日志保存位置的偏好设置对话框](DOCS/assets/preferences_dialog.png)
+
+*偏好设置 — 可设置监听端口与日志的保存位置。*
 
 ## 项目结构与目标
 

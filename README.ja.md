@@ -1,6 +1,18 @@
-# vlt-syslogd-server (Workspace)
+# Veltrea Syslog Server
+
+*ワークスペース · パッケージ名: `vlt-syslogd`*
 
 2バイト文字(CJK)環境での高い視認性と実用性を追求した、Windows / macOS 対応 Syslog ソリューション。
+
+## スクリーンショット
+
+![日本語(CJK)メッセージがきれいに表示されたメイン画面](DOCS/assets/main_window.png)
+
+*メイン画面 — リアルタイムのログ表示。ASCII と並んで日本語などのマルチバイト(CJK)メッセージが正しく表示されます。*
+
+![待ち受けポートとログ保存先を設定する環境設定ダイアログ](DOCS/assets/preferences_dialog.png)
+
+*環境設定 — 待ち受けポートとログの保存先を設定できます。*
 
 ## プロジェクトの構成と目的
 

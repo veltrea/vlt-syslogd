@@ -1,6 +1,18 @@
-# vlt-syslogd-server (Workspace)
+# Veltrea Syslog Server
+
+*Workspace · tên gói: `vlt-syslogd`*
 
 Giải pháp Syslog dành cho Windows, được thiết kế để mang lại khả năng hiển thị cao và tính thực tiễn trong môi trường ký tự đa byte (CJK/Tiếng Nhật).
+
+## Ảnh chụp màn hình
+
+![Cửa sổ chính nhận thông điệp syslog, hiển thị rõ ràng văn bản đa byte (CJK)](DOCS/assets/main_window.png)
+
+*Cửa sổ chính — xem log thời gian thực. Các thông điệp đa byte (CJK) hiển thị chính xác cùng với văn bản ASCII.*
+
+![Hộp thoại tùy chọn hiển thị cổng lắng nghe và nơi lưu log](DOCS/assets/preferences_dialog.png)
+
+*Tùy chọn — chọn cổng lắng nghe và vị trí lưu log.*
 
 ## Cấu trúc và Mục đích của Dự án
 

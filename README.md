@@ -1,6 +1,18 @@
-# vlt-syslogd-server (Workspace)
+# Veltrea Syslog Server
+
+*Workspace · package name: `vlt-syslogd`*
 
 A Syslog solution for Windows and macOS, designed for high visibility and practical utility in multi-byte character (CJK) environments.
+
+## Screenshots
+
+![Main window receiving syslog messages, with multi-byte (CJK) text rendered clearly](DOCS/assets/main_window.png)
+
+*Main window — real-time log view. Multi-byte (CJK) messages render correctly alongside ASCII text.*
+
+![Preferences dialog showing the listening port and log destination](DOCS/assets/preferences_dialog.png)
+
+*Preferences — choose the listening port and the log storage location.*
 
 ## Project Structure and Purpose
 
