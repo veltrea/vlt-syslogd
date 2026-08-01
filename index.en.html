@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Veltrea Syslog Server — syslog that doesn't mangle your text</title>
+    <meta
+      name="description"
+      content="A syslog server that decides the character encoding per message and shows you which one it used. Windows, macOS and Linux. Single file, no install. Written in Rust, MIT licensed."
+    />
+    <link rel="canonical" href="https://veltrea.github.io/vlt-syslogd/index.en.html" />
+    <link rel="alternate" hreflang="ja" href="https://veltrea.github.io/vlt-syslogd/" />
+    <link rel="alternate" hreflang="en" href="https://veltrea.github.io/vlt-syslogd/index.en.html" />
+    <link rel="icon" href="assets/icon-256.png" type="image/png" />
+    <link rel="stylesheet" href="styles.css" />
+    <meta property="og:title" content="Veltrea Syslog Server" />
+    <meta
+      property="og:description"
+      content="A syslog server that decides the character encoding per message and shows you which one it used."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="assets/portable-main.png" />
+  </head>
+  <body>
+    <!--
+      THESIS: show the mechanism itself in the first viewport — one datagram, decoded on its own
+        evidence. Refuses the developer-landing default (near-black ground, neon terminal mock)
+        and its opposite (white SaaS page with a gradient headline).
+      OWN-WORLD: Japanese typesetting spec sheet. Manuscript-paper viridian ground, paste-up paper
+        panels, proofreader's vermilion for instruction, non-photo blue for rules. Display face is a
+        self-hosted subset of Shippori Mincho; body text is the reader's own OS font. The only
+        ornament is crop marks and a correction stroke.
+      STORY: the visitor understands "decided per message, and it tells you", verifies it in real
+        screenshots, and downloads it from the same page.
+      FIRST VIEWPORT: vertical title band at left; heading and lede at right; directly below, a paper
+        panel setting one datagram three times — wire bytes, what a single-encoding receiver shows,
+        what this shows. The vermilion primary action sits right under the panel.
+      FORM: typesetting spec sheet / proof (7th of my own seven) / seed 6c7700a0
+      FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+    -->
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="masthead">
+      <a class="masthead__mark" href="index.en.html">
+        <img src="assets/icon-256.png" alt="" width="26" height="26" />
+        Veltrea Syslog Server
+      </a>
+      <nav aria-label="Site">
+        <a class="jump" href="#shapes">Three shapes</a>
+        <a class="jump" href="#plates">Screens</a>
+        <a class="jump" href="#download">Get it</a>
+        <a href="manual.en.html">Manual</a>
+        <a href="https://github.com/veltrea/vlt-syslogd">GitHub</a>
+        <span class="lang">
+          <a href="./" hreflang="ja">日本語</a>
+          <a href="index.en.html" aria-current="true" hreflang="en">EN</a>
+        </span>
+      </nav>
+    </header>
+
+    <main id="main">
+      <!-- ===== First viewport ===== -->
+      <section class="hero">
+        <div class="wrap hero__grid">
+          <p class="hero__spine"><b>Veltrea Syslog Server</b>　v0.4.0</p>
+
+          <div>
+            <h1>Syslog that doesn't <em>mangle</em> your text.</h1>
+            <p class="hero__lede">
+              It decides the character encoding <strong>per message</strong>, not
+              per stream, and shows you <strong>which encoding it used</strong>.
+              One file, no installer, no network, no admin rights.
+            </p>
+
+            <div class="proof tombo">
+              <p class="proof__label">
+                <span>One datagram</span>
+                <span>UDP 514</span>
+                <span>RFC 3164 framing, UTF-8 payload</span>
+              </p>
+
+              <dl>
+                <div class="proof__row">
+                  <dt>What arrived on the wire</dt>
+                  <dd>
+                    3c 31 33 32 3e 61 75 74 68 3a 20 <b>e8 aa 8d e8 a8 bc e3 81
+                    ab e5 a4 b1 e6 95 97 e3 81 97 e3 81 be e3 81 97 e3 81 9f</b>
+                    3a 20 …
+                  </dd>
+                </div>
+
+                <div class="proof__row proof__row--bad">
+                  <dt>A receiver locked to one encoding</dt>
+                  <dd>&lt;132&gt;auth: 隱崎ｨｼ縺ｫ螟ｱ謨励＠縺ｾ縺励◆: 繝ｦ繝ｼ繧ｶ繝ｼ admin</dd>
+                </div>
+
+                <div class="proof__row proof__row--good">
+                  <dt>What vlt-syslogd shows</dt>
+                  <dd>
+                    認証に失敗しました: ユーザー admin (3 回目)<span
+                      class="proof__enc"
+                      >Enc: UTF-8</span
+                    >
+                  </dd>
+                </div>
+              </dl>
+
+              <p class="proof__note">
+                The decision is made for each datagram, so a Shift_JIS appliance
+                and a UTF-8 appliance can share the same port and both stay
+                readable. The encoding it settled on appears in the
+                <b>Enc</b> column, so you can judge whether to trust what you are
+                reading.
+              </p>
+            </div>
+
+            <div class="actions">
+              <a
+                class="btn btn--primary"
+                href="https://github.com/veltrea/vlt-syslogd/releases/latest"
+                >Download v0.4.0</a
+              >
+              <a class="btn btn--ghost" href="manual.en.html">Read the manual</a>
+              <small>
+                MIT licensed, written in Rust<br />
+                Windows / macOS / Linux (x86_64)
+              </small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== How the decision is made ===== -->
+      <section class="section" id="encoding">
+        <div class="wrap">
+          <div class="section__head">
+            <h2>What it decides the encoding from</h2>
+            <p>
+              Guessing is the last resort, not the first. A declared charset wins;
+              a BOM comes next; only then does it infer from the bytes. The
+              <b>Enc</b> column names which of those actually happened.
+            </p>
+          </div>
+
+          <div class="table-scroll">
+            <table>
+              <caption class="visually-hidden">
+                Wire format, how the encoding is decided, and what the Enc column shows
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">What arrived</th>
+                  <th scope="col">How it decides</th>
+                  <th scope="col">Enc column</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    RFC 5424 with structured data
+                    <code>charset="Shift_JIS"</code>
+                  </td>
+                  <td>
+                    Takes the declaration at its word. A BOM is stripped if
+                    present, but never required.
+                  </td>
+                  <td><code>Shift_JIS (MSG-SD/BOM-Missing)</code></td>
+                </tr>
+                <tr>
+                  <td>RFC 5424, no declaration, BOM present</td>
+                  <td>Reads it as UTF-8 on the strength of the BOM.</td>
+                  <td><code>UTF-8 (MSG-UTF8/BOM)</code></td>
+                </tr>
+                <tr>
+                  <td>RFC 5424, neither declaration nor BOM</td>
+                  <td>
+                    UTF-8 if the bytes are valid UTF-8; otherwise inferred from
+                    the bytes.
+                  </td>
+                  <td>
+                    <code>UTF-8 (Implicit)</code> / <code>Shift_JIS (Guess)</code>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    RFC 3164
+                    (<code>&lt;PRI&gt;Aug 01 19:37:14 host tag: …</code>)
+                  </td>
+                  <td>Inferred from the payload bytes.</td>
+                  <td><code>UTF-8</code> / <code>Shift_JIS</code></td>
+                </tr>
+                <tr>
+                  <td>
+                    Bare BSD framing (<code>&lt;PRI&gt;tag: …</code>, no
+                    timestamp, no hostname)
+                  </td>
+                  <td>
+                    Accepted as-is; the word before the colon becomes the tag.
+                  </td>
+                  <td><code>UTF-8</code> / <code>Shift_JIS</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p style="margin-top: 1.5rem">
+            Real devices are not reliably standards-compliant, which is why the
+            rule here is <b>accept a wide range of shapes, and be explicit about
+            how you read them</b>. The original bytes are kept, so any row can be
+            copied back out as hex with <b>Copy as Hex</b>.
+          </p>
+        </div>
+      </section>
+
+      <!-- ===== Three shapes ===== -->
+      <section class="section" id="shapes">
+        <div class="wrap">
+          <div class="section__head">
+            <h2>One engine, three shapes</h2>
+            <p>
+              The part that reads syslog is the same code in all three. If you
+              are not sure, start with Portable.
+            </p>
+          </div>
+
+          <div class="shape">
+            <h3 class="shape__name">
+              Portable
+              <span>vlt-syslogd-portable</span>
+            </h3>
+            <div class="shape__body">
+              <p>
+                A self-contained GUI that opens the UDP socket itself. Double
+                click it and it is already receiving. No installer, no service
+                registration, no internet.
+              </p>
+              <p>
+                This is the shape for a laptop you carry to a site, a borrowed
+                machine at a customer, and the "I need ten minutes of logs" case.
+              </p>
+            </div>
+            <dl class="shape__spec">
+              <div><dt>Privileges</dt><dd>none (Windows)</dd></div>
+              <div><dt>Listens on</dt><dd>514/udp</dd></div>
+              <div><dt>Resident</dt><dd>no</dd></div>
+            </dl>
+          </div>
+
+          <div class="shape">
+            <h3 class="shape__name">
+              Server
+              <span>vlt-syslogd-srv</span>
+            </h3>
+            <div class="shape__body">
+              <p>
+                The headless engine. Registered as a Windows service, a launchd
+                daemon or a systemd unit, it starts with the machine, writes what
+                it receives to disk and streams it to Console.
+              </p>
+              <p>This is the shape for a machine that must not miss anything.</p>
+            </div>
+            <dl class="shape__spec">
+              <div><dt>Privileges</dt><dd>admin, at install only</dd></div>
+              <div><dt>Listens on</dt><dd>514/udp, 5141/tcp, 5142/tcp</dd></div>
+              <div><dt>Resident</dt><dd>yes</dd></div>
+            </dl>
+          </div>
+
+          <div class="shape">
+            <h3 class="shape__name">
+              Console
+              <span>vlt-syslogd-console</span>
+            </h3>
+            <div class="shape__body">
+              <p>
+                The GUI that attaches to a running Server over TCP. Open it when
+                you want to look; closing it does not stop collection. Starting,
+                stopping and reconfiguring the service happens from here too.
+              </p>
+              <p>
+                The stream (5141) and control (5142) channels are loopback-only by
+                default and protected by a shared token.
+              </p>
+            </div>
+            <dl class="shape__spec">
+              <div><dt>Privileges</dt><dd>none (UAC only when acting)</dd></div>
+              <div><dt>Connects to</dt><dd>127.0.0.1:5141 / 5142</dd></div>
+              <div><dt>Resident</dt><dd>no</dd></div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Screens ===== -->
+      <section class="section" id="plates">
+        <div class="wrap">
+          <div class="section__head">
+            <h2>The real thing</h2>
+            <p>
+              All captured from the v0.4.0 Windows release binaries running on
+              Windows 11, fed a syslog stream mixing UTF-8 and Shift_JIS.
+            </p>
+          </div>
+
+          <figure class="plate">
+            <div class="plate__frame">
+              <a href="assets/portable-main.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/portable-main.png"
+                  width="1698"
+                  height="989"
+                  alt="The Portable log view: five columns — Time, Tag, Severity, Enc, Message — showing UTF-8 and Shift_JIS Japanese messages rendered correctly side by side."
+                />
+              </a>
+            </div>
+            <figcaption class="plate__caption">
+              <b>Portable — the log view</b>
+              <span>
+                The Enc column carries <code>UTF-8</code>,
+                <code>Shift_JIS</code> and
+                <code>Shift_JIS (MSG-SD/BOM-Missing)</code> in the same screen —
+                different senders, different framings, all readable. Severity is
+                colour-coded; Critical and Alert come forward in vermilion.
+                <a class="plate__full" href="assets/portable-main.png" target="_blank" rel="noopener"
+                  >Open full size</a
+                >
+              </span>
+            </figcaption>
+          </figure>
+
+          <div class="plate plate--split">
+            <div class="plate__frame">
+              <a href="assets/portable-prefs.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/portable-prefs-detail.png"
+                  width="760"
+                  height="215"
+                  alt="The preferences dialog: listening port 514 and the log directory path."
+                />
+              </a>
+            </div>
+            <div class="plate__caption">
+              <b>Preferences</b>
+              <span>
+                Two settings: the port to listen on and where to write logs. If
+                514 is already taken, change it here. Whether the bind succeeded
+                is printed as the first row of the log view.
+                <a class="plate__full" href="assets/portable-prefs.png" target="_blank" rel="noopener"
+                  >Open the whole window</a
+                >
+              </span>
+            </div>
+          </div>
+
+          <figure class="plate">
+            <div class="plate__frame">
+              <a href="assets/console-main.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/console-main.png"
+                  width="1698"
+                  height="989"
+                  alt="Console attached to Server: a green 'receiving (127.0.0.1:5141)' indicator and start/stop/restart service buttons."
+                />
+              </a>
+            </div>
+            <figcaption class="plate__caption">
+              <b>Console — attached to a resident Server</b>
+              <span>
+                The green indicator means the stream channel is live. Service
+                start, stop and restart are here too. (In this capture the engine
+                was launched directly rather than registered, so the service state
+                reads "not installed".)
+                <a class="plate__full" href="assets/console-main.png" target="_blank" rel="noopener"
+                  >Open full size</a
+                >
+              </span>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ===== Download ===== -->
+      <section class="section" id="download">
+        <div class="wrap">
+          <div class="section__head">
+            <h2>Get it</h2>
+            <p>
+              Latest is <b>v0.4.0</b>. Take only the pieces your case needs; they
+              all live in GitHub Releases.
+            </p>
+          </div>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">OS</th>
+                  <th scope="col">Shape</th>
+                  <th scope="col">File</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Windows</td>
+                  <td>Portable</td>
+                  <td>
+                    <a
+                      href="https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-portable-windows-v0.4.0.zip"
+                      ><code>vlt-syslogd-portable-windows-v0.4.0.zip</code></a
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td>Windows</td>
+                  <td>Server + Console</td>
+                  <td>
+                    <a
+                      href="https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-srv-windows-v0.4.0.zip"
+                      ><code>vlt-syslogd-srv-windows-v0.4.0.zip</code></a
+                    >
+                    /
+                    <a
+                      href="https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-console-windows-v0.4.0.zip"
+                      ><code>vlt-syslogd-console-windows-v0.4.0.zip</code></a
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td>macOS</td>
+                  <td>Portable</td>
+                  <td>
+                    <a
+                      href="https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-macos-portable-v0.4.0.dmg"
+                      ><code>vlt-syslogd-macos-portable-v0.4.0.dmg</code></a
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td>macOS</td>
+                  <td>App (data in Application Support)</td>
+                  <td>
+                    <a
+                      href="https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-macos-app-v0.4.0.dmg"
+                      ><code>vlt-syslogd-macos-app-v0.4.0.dmg</code></a
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td>Linux</td>
+                  <td>Portable (x86_64, single ELF)</td>
+                  <td>
+                    <a
+                      href="https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-linux-x86_64-portable-v0.4.0"
+                      ><code>vlt-syslogd-linux-x86_64-portable-v0.4.0</code></a
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 style="margin-top: 2.5rem; font-size: var(--step-2)">
+            Three moves to a first log line
+          </h3>
+          <ol class="steps" style="margin-top: 1.5rem">
+            <li>
+              <div>
+                <h3>Unzip and open it</h3>
+                <p>
+                  Portable needs no installation. Unzip and double click
+                  <code>vlt-syslogd-portable.exe</code>. If SmartScreen appears,
+                  choose "More info" then "Run anyway".
+                </p>
+              </div>
+            </li>
+            <li>
+              <div>
+                <h3>Check the first row</h3>
+                <p>
+                  <code>Listening on 0.0.0.0:514 (UDP)</code> as the first row
+                  means the socket is open. If it failed, pick another port in
+                  Preferences.
+                </p>
+              </div>
+            </li>
+            <li>
+              <div>
+                <h3>Send yourself one message</h3>
+                <p>A row should appear immediately.</p>
+                <pre class="cmd"><code>$u = New-Object System.Net.Sockets.UdpClient
+$b = [Text.Encoding]::UTF8.GetBytes('&lt;132&gt;auth: login failed')
+$u.Send($b, $b.Length, '127.0.0.1', 514) | Out-Null; $u.Close()</code></pre>
+                <p style="margin-bottom: 0">
+                  Making it resident, or receiving from other devices, is covered
+                  in the <a href="manual.en.html">manual</a>.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- ===== Honest limits ===== -->
+      <section class="section" id="limits">
+        <div class="wrap">
+          <div class="section__head">
+            <h2>Three things worth knowing first</h2>
+            <p>These are where people usually get stuck.</p>
+          </div>
+
+          <div style="display: grid; gap: 2rem; max-width: 44rem">
+            <div class="caution">
+              <h3>514 is a privileged port on macOS and Linux</h3>
+              <p>
+                Ports below 1024 need root. On macOS (Mojave and later)
+                <code>0.0.0.0:514</code> does not, but binding a specific
+                interface such as <code>127.0.0.1:514</code> still does. On Linux
+                you need root or <code>CAP_NET_BIND_SERVICE</code>. Moving to a
+                port above 1024 avoids the whole question.
+              </p>
+            </div>
+
+            <div class="caution">
+              <h3>The macOS builds are ad-hoc signed, not notarized</h3>
+              <p>
+                There is no Apple Developer account behind this project, so
+                Gatekeeper stops the first launch. Right click → Open once, or
+                clear the quarantine flag with
+                <code>xattr -dr com.apple.quarantine</code>. The Portable variant
+                keeps its data next to the <code>.app</code>, and App
+                Translocation breaks that while the quarantine flag is still
+                there.
+              </p>
+            </div>
+
+            <div class="caution">
+              <h3>"Service running" is not "port reachable"</h3>
+              <p>
+                A running Server with a firewall in front of UDP 514 receives
+                nothing at all. When remote logs do not arrive, check in this
+                order: is <code>bind_addr</code> something other than
+                <code>127.0.0.1</code>, is the firewall open, and is the sender
+                actually pointed at this machine.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="colophon">
+      <div class="wrap">
+        <div class="colophon__grid">
+          <div>
+            <h2>Read</h2>
+            <ul>
+              <li><a href="manual.en.html">Manual (English)</a></li>
+              <li><a href="./">日本語</a></li>
+              <li>
+                <a
+                  href="https://github.com/veltrea/vlt-syslogd/blob/main/DOCS/REFERENCE.md"
+                  >Architecture reference</a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://github.com/veltrea/vlt-syslogd/blob/main/DOCS/BUILD.md"
+                  >Building from source</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h2>Get</h2>
+            <ul>
+              <li>
+                <a href="https://github.com/veltrea/vlt-syslogd/releases/latest"
+                  >Latest release</a
+                >
+              </li>
+              <li>
+                <a href="https://github.com/veltrea/vlt-syslogd">Source code</a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/veltrea/vlt-syslogd/blob/main/DOCS/VERSION_HISTORY.md"
+                  >Changelog</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h2>About this tool</h2>
+            <p style="max-width: none">
+              Written from scratch in Rust because the lightweight Windows syslog
+              servers in common use could not render Japanese properly. Author:
+              veltrea. MIT licensed.
+            </p>
+          </div>
+        </div>
+
+        <div class="colophon__end">
+          <span>© 2026 veltrea — MIT License</span>
+          <span>Display face: Shippori Mincho (SIL Open Font License 1.1)</span>
+        </div>
+      </div>
+    </footer>
+
+    <script src="site.js" defer></script>
+  </body>
+</html>

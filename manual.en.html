@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Manual — Veltrea Syslog Server</title>
+    <meta
+      name="description"
+      content="How to use Veltrea Syslog Server (vlt-syslogd): trying Portable, reading the log view, running Server as a service on Windows, macOS and Linux, attaching Console, and troubleshooting."
+    />
+    <link rel="canonical" href="https://veltrea.github.io/vlt-syslogd/manual.en.html" />
+    <link rel="alternate" hreflang="ja" href="https://veltrea.github.io/vlt-syslogd/manual.html" />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://veltrea.github.io/vlt-syslogd/manual.en.html"
+    />
+    <link rel="icon" href="assets/icon-256.png" type="image/png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="doc">
+    <!--
+      THESIS: the reading register of the same world — the ground inverts to paper, the proof
+        becomes the printed sheet. Comprehension and wayfinding lead; expression stays in the rules.
+      OWN-WORLD: paste-up paper ground, non-photo blue grid, manuscript viridian for headings and
+        rules, proofreader's vermilion for cautions and current position.
+      STORY: the reader follows only their own OS and their own course, and can work backwards from
+        a symptom when stuck.
+      FIRST VIEWPORT: sticky table of contents at left marking position in vermilion; body at right,
+        opening on the "which one do I install" fork.
+      FORM: typesetting spec sheet / proof / seed 6c7700a0
+      FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+    -->
+    <a class="skip" href="#doc">Skip to content</a>
+
+    <header class="masthead">
+      <a class="masthead__mark" href="index.en.html">
+        <img src="assets/icon-256.png" alt="" width="26" height="26" />
+        Veltrea Syslog Server
+      </a>
+      <nav aria-label="Site">
+        <a href="index.en.html">Overview</a>
+        <a href="manual.en.html" aria-current="page">Manual</a>
+        <a href="https://github.com/veltrea/vlt-syslogd">GitHub</a>
+        <span class="lang">
+          <a href="manual.html" hreflang="ja">日本語</a>
+          <a href="manual.en.html" aria-current="true" hreflang="en">EN</a>
+        </span>
+      </nav>
+    </header>
+
+    <div class="wrap doc__layout">
+      <nav class="toc" aria-label="Contents">
+        <h2>Contents</h2>
+        <ol>
+          <li><a href="#start">Which one do I install</a></li>
+          <li>
+            <a href="#portable">Trying Portable</a>
+            <ol>
+              <li><a href="#portable-win">Windows</a></li>
+              <li><a href="#portable-mac">macOS</a></li>
+              <li><a href="#portable-linux">Linux</a></li>
+            </ol>
+          </li>
+          <li>
+            <a href="#screen">Reading the log view</a>
+            <ol>
+              <li><a href="#screen-columns">The five columns</a></li>
+              <li><a href="#screen-enc">What the Enc column means</a></li>
+              <li><a href="#screen-prefs">Preferences</a></li>
+            </ol>
+          </li>
+          <li>
+            <a href="#server">Running Server as a service</a>
+            <ol>
+              <li><a href="#server-win">Windows service</a></li>
+              <li><a href="#server-mac">macOS / launchd</a></li>
+              <li><a href="#server-linux">Linux / systemd</a></li>
+            </ol>
+          </li>
+          <li><a href="#config">The config file</a></li>
+          <li><a href="#network">Network and firewall</a></li>
+          <li><a href="#console">Using Console</a></li>
+          <li><a href="#verify">Verifying it works</a></li>
+          <li><a href="#uninstall">Uninstalling</a></li>
+          <li><a href="#trouble">When something is wrong</a></li>
+          <li><a href="#reference">Identifiers and paths</a></li>
+        </ol>
+      </nav>
+
+      <main class="doc__body" id="doc">
+        <h1>Manual</h1>
+        <p>
+          Veltrea Syslog Server (package name <code>vlt-syslogd</code>) receives
+          syslog over UDP and displays it. This manual covers v0.4.0.
+        </p>
+
+        <section id="start">
+          <h2>1. Which one do I install</h2>
+          <p>
+            There are three ways to run this. Decide what you are trying to do
+            first. If you are unsure, take <b>Portable</b>: no service, no admin
+            rights, running the moment you open it.
+          </p>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">What you want</th>
+                  <th scope="col">What to install</th>
+                  <th scope="col">Sections</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Just try it / keep it on one machine</td>
+                  <td>Portable only (no install)</td>
+                  <td><a href="#portable">2</a> → <a href="#screen">3</a></td>
+                </tr>
+                <tr>
+                  <td>Collect continuously (server use)</td>
+                  <td>Server (resident) + Console (the view)</td>
+                  <td>
+                    <a href="#server">4</a> → <a href="#config">5</a> →
+                    <a href="#network">6</a> → <a href="#console">7</a> →
+                    <a href="#verify">8</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Look at a Server that already runs</td>
+                  <td>Console only</td>
+                  <td><a href="#console">7</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>The three pieces</h3>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Executable</th>
+                  <th scope="col">Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Portable</td>
+                  <td><code>vlt-syslogd-portable</code></td>
+                  <td>Self-contained GUI that opens the UDP socket itself.</td>
+                </tr>
+                <tr>
+                  <td>Server</td>
+                  <td><code>vlt-syslogd-srv</code></td>
+                  <td>
+                    Headless engine. Receives over UDP and streams to Console.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Console</td>
+                  <td><code>vlt-syslogd-console</code></td>
+                  <td>GUI that attaches to Server over TCP.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            On Windows each has a <code>.exe</code> suffix. Binaries are in
+            <a href="https://github.com/veltrea/vlt-syslogd/releases/latest"
+              >GitHub Releases</a
+            >. To build from source, see
+            <a
+              href="https://github.com/veltrea/vlt-syslogd/blob/main/DOCS/BUILD.md"
+              >BUILD.md</a
+            >; everything after the build is identical.
+          </p>
+        </section>
+
+        <section id="portable">
+          <h2>2. Trying Portable</h2>
+          <p>
+            Portable listens on UDP 514 by itself. Unpack it, open it, send a test
+            message, and watch a row appear.
+          </p>
+
+          <h3 id="portable-win">2.1 Windows</h3>
+          <p>
+            Unzip <code>vlt-syslogd-portable-windows-v0.4.0.zip</code> and double
+            click <code>vlt-syslogd-portable.exe</code>. If SmartScreen appears,
+            choose "More info" then "Run anyway". Windows has no privileged-port
+            concept, so binding 514 needs no admin rights.
+          </p>
+          <pre class="cmd"><code>$u = New-Object System.Net.Sockets.UdpClient
+$b = [Text.Encoding]::UTF8.GetBytes('&lt;132&gt;auth: login failed')
+$u.Send($b, $b.Length, '127.0.0.1', 514) | Out-Null; $u.Close()</code></pre>
+
+          <h3 id="portable-mac">2.2 macOS</h3>
+          <p>
+            Open <code>vlt-syslogd-macos-portable-v0.4.0.dmg</code> and take out
+            <code>vlt-syslogd-portable.app</code>. The macOS builds are ad-hoc
+            signed and not notarized, so Gatekeeper stops the first launch. Either
+            right click → Open once, or clear the quarantine flag.
+          </p>
+          <pre class="cmd"><code>xattr -dr com.apple.quarantine vlt-syslogd-portable.app</code></pre>
+          <div class="caution">
+            <h4>Clear the quarantine flag on the Portable variant</h4>
+            <p>
+              Portable keeps its data next to the <code>.app</code>. While the
+              quarantine flag is present, App Translocation runs the app from a
+              read-only copy elsewhere and that data location breaks.
+            </p>
+          </div>
+          <pre class="cmd"><code>printf '&lt;34&gt;Oct 11 22:14:15 myhost myapp: hello' | nc -u -w1 127.0.0.1 514</code></pre>
+
+          <h3 id="portable-linux">2.3 Linux</h3>
+          <p>
+            A single ELF binary. Make it executable and run it. 514 is a
+            privileged port, so if the bind fails, run as root or grant
+            <code>CAP_NET_BIND_SERVICE</code>.
+          </p>
+          <pre class="cmd"><code>chmod +x vlt-syslogd-linux-x86_64-portable-v0.4.0
+./vlt-syslogd-linux-x86_64-portable-v0.4.0</code></pre>
+          <p>
+            The GUI needs a CJK font installed to render Japanese; without one you
+            get tofu boxes. Install <code>fonts-noto-cjk</code> or equivalent.
+          </p>
+        </section>
+
+        <section id="screen">
+          <h2>3. Reading the log view</h2>
+
+          <figure class="plate" style="margin-bottom: 2rem">
+            <div class="plate__frame">
+              <a href="assets/portable-main.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/portable-main.png"
+                  width="1698"
+                  height="989"
+                  alt="The Portable log view with five columns: Time, Tag, Severity, Enc and Message."
+                />
+              </a>
+            </div>
+            <figcaption class="plate__caption">
+              <b>Portable — the log view</b>
+              <a class="plate__full" href="assets/portable-main.png" target="_blank" rel="noopener">Open full size</a>
+            </figcaption>
+          </figure>
+
+          <h3 id="screen-columns">3.1 The five columns</h3>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Column</th>
+                  <th scope="col">What it holds</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Time</td>
+                  <td>
+                    When it was received, to the millisecond — not the timestamp
+                    the sender claimed.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Tag</td>
+                  <td>
+                    The tag lifted from the front of the payload. It is filled
+                    only when there is a space-free word before the first colon,
+                    as in <code>&lt;PRI&gt;tag: message</code>; otherwise
+                    <code>-</code>.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Severity</td>
+                  <td>
+                    Taken from PRI: Emergency, Alert, Critical, Error, Warning,
+                    Notice, Informational, Debug — also distinguished by colour.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Enc</td>
+                  <td>
+                    The encoding used to decode this one message, and the evidence
+                    it was chosen on. See below.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Message</td>
+                  <td>The decoded payload.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            <b>Filter</b> narrows by message and tag. Unchecking
+            <b>Auto-scroll</b> stops the view following new rows, which is what
+            you want when reading one line in a busy stream.
+            <b>🗑 Clear</b> discards the rows on screen; the log files on disk are
+            untouched.
+          </p>
+          <p>
+            Right clicking a row offers <b>Copy Message</b> (the decoded text) and
+            <b>Copy as Hex</b> (the bytes exactly as they arrived). When something
+            looks wrong, the hex tells you whether the problem is on the wire or
+            in the display.
+          </p>
+
+          <h3 id="screen-enc">3.2 What the Enc column means</h3>
+          <p>
+            The encoding is decided <b>per message</b>, not per connection, so a
+            Shift_JIS appliance and a UTF-8 appliance can share one port.
+          </p>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Enc shows</th>
+                  <th scope="col">Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>UTF-8</code> / <code>Shift_JIS</code></td>
+                  <td>
+                    Arrived in RFC 3164 or bare BSD framing and was decoded from
+                    the byte pattern.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>Shift_JIS (MSG-SD/BOM-Missing)</code></td>
+                  <td>
+                    RFC 5424 structured data declared
+                    <code>charset="Shift_JIS"</code> and was believed. No BOM was
+                    present.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>UTF-8 (MSG-UTF8/BOM)</code></td>
+                  <td>No declaration, but a BOM, so it was read as UTF-8.</td>
+                </tr>
+                <tr>
+                  <td><code>UTF-8 (Implicit)</code></td>
+                  <td>
+                    Neither declaration nor BOM, but the bytes were valid UTF-8.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>Shift_JIS (Guess)</code></td>
+                  <td>No evidence at all; inferred from the bytes.</td>
+                </tr>
+                <tr>
+                  <td><code>system</code></td>
+                  <td>
+                    Not received at all — a line vlt-syslogd wrote itself, such as
+                    the bind result.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="screen-prefs">3.3 Preferences</h3>
+          <div class="plate plate--split" style="margin-bottom: 2rem">
+            <div class="plate__frame">
+              <img
+                src="assets/portable-menu-detail.png"
+                width="620"
+                height="170"
+                alt="The File menu opened, showing Preferences, Open log folder and Quit."
+              />
+            </div>
+            <div class="plate__caption">
+              <b>The File menu</b>
+              <span>
+                Besides Preferences, it opens the log directory in the OS file
+                manager. On macOS these sit in the application menu instead.
+              </span>
+            </div>
+          </div>
+          <div class="plate plate--split" style="margin-bottom: 2rem">
+            <div class="plate__frame">
+              <a href="assets/portable-prefs.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/portable-prefs-detail.png"
+                  width="760"
+                  height="215"
+                  alt="The preferences dialog with two fields: listening port and log directory."
+                />
+              </a>
+            </div>
+            <div class="plate__caption">
+              <b>File → Preferences…</b>
+              <span>
+                Two settings only: the listening port and where logs are written.
+                "Apply" re-opens the socket.
+              <a class="plate__full" href="assets/portable-prefs.png" target="_blank" rel="noopener">Open the whole window</a></span>
+            </div>
+          </div>
+          <p>
+            The bind result appears as the first row of the log view
+            (<code>Listening on 0.0.0.0:514 (UDP)</code>). If 514 is already held
+            by another process, move to a port above 1024 here and point the
+            sender at the same port.
+          </p>
+          <p>
+            The GUI listening address can also be overridden with the
+            <code>VLT_SYSLOGD_BIND</code> environment variable, for example
+            <code>VLT_SYSLOGD_BIND=0.0.0.0:5514</code>.
+          </p>
+        </section>
+
+        <section id="server">
+          <h2>4. Running Server as a service</h2>
+          <p>
+            Server has no window. The bundled install script places the
+            executable, creates the data directory, registers the service and
+            starts it. Admin rights are needed <b>only during install</b>; after
+            that it comes up with the machine.
+          </p>
+
+          <h3 id="server-win">4.1 Windows service</h3>
+          <p>From an <b>elevated</b> PowerShell:</p>
+          <pre class="cmd"><code>cd Server
+powershell -ExecutionPolicy Bypass -File .\install-windows.ps1</code></pre>
+          <div class="table-scroll">
+            <table>
+              <tbody>
+                <tr>
+                  <td>Executable</td>
+                  <td><code>C:\Program Files\vlt-syslogd\vlt-syslogd-srv.exe</code></td>
+                </tr>
+                <tr>
+                  <td>Data and logs</td>
+                  <td><code>C:\ProgramData\vlt-syslogd\</code></td>
+                </tr>
+                <tr>
+                  <td>Service name</td>
+                  <td><code>vlt-syslogd-srv</code> (startup type: automatic)</td>
+                </tr>
+                <tr>
+                  <td>Check state</td>
+                  <td><code>sc.exe query vlt-syslogd-srv</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            The PowerShell scripts are deliberately ASCII-only so that a CP932
+            console cannot corrupt them. The prose lives here instead.
+          </p>
+
+          <h3 id="server-mac">4.2 macOS / launchd</h3>
+          <pre class="cmd"><code>cd Server
+sudo ./install-macos.sh</code></pre>
+          <div class="table-scroll">
+            <table>
+              <tbody>
+                <tr>
+                  <td>Executable</td>
+                  <td><code>/usr/local/bin/vlt-syslogd-srv</code></td>
+                </tr>
+                <tr>
+                  <td>Data and logs</td>
+                  <td><code>/usr/local/var/vlt-syslogd/</code></td>
+                </tr>
+                <tr>
+                  <td>LaunchDaemon</td>
+                  <td>
+                    <code
+                      >/Library/LaunchDaemons/com.veltrea.vlt-syslogd-srv.plist</code
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td>Check state</td>
+                  <td>
+                    <code
+                      >sudo launchctl print system/com.veltrea.vlt-syslogd-srv</code
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            The LaunchDaemon runs as root, which is what lets it bind 514. That is
+            why the installer asks for authentication.
+          </p>
+
+          <h3 id="server-linux">4.3 Linux / systemd</h3>
+          <pre class="cmd"><code>cd Server
+sudo ./install-linux.sh</code></pre>
+          <div class="table-scroll">
+            <table>
+              <tbody>
+                <tr>
+                  <td>Executable</td>
+                  <td><code>/usr/local/bin/vlt-syslogd-srv</code></td>
+                </tr>
+                <tr>
+                  <td>Data and logs</td>
+                  <td><code>/var/lib/vlt-syslogd/</code></td>
+                </tr>
+                <tr>
+                  <td>Unit</td>
+                  <td><code>/etc/systemd/system/vlt-syslogd-srv.service</code></td>
+                </tr>
+                <tr>
+                  <td>Check state</td>
+                  <td><code>systemctl status vlt-syslogd-srv.service</code></td>
+                </tr>
+                <tr>
+                  <td>Follow logs</td>
+                  <td><code>journalctl -u vlt-syslogd-srv.service -f</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            The unit runs as root by default so that it can open 514. If you would
+            rather it did not, the unit file carries commented hints for a
+            dedicated user plus
+            <code>AmbientCapabilities=CAP_NET_BIND_SERVICE</code>.
+          </p>
+        </section>
+
+        <section id="config">
+          <h2>5. The config file</h2>
+          <p>
+            Server writes <code>config.toml</code> into its data directory on
+            <b>first run</b>. The defaults work, so read this only when you want
+            to change ports or exposure.
+          </p>
+          <pre><code>[server]
+bind_addr    = "0.0.0.0:514"        # syslog intake (UDP)
+stream_addr  = "127.0.0.1:5141"     # stream to Console (TCP)
+control_addr = "127.0.0.1:5142"     # control channel (TCP)
+
+[logging]
+level        = "info"
+max_size_mb  = 10
+keep_files   = 7</code></pre>
+          <p>
+            After editing, restart the service or use Console's
+            <b>Apply to server (restart)</b>. The data directory location can be
+            overridden with <code>VLT_SYSLOGD_DATA_DIR</code>.
+          </p>
+        </section>
+
+        <section id="network">
+          <h2>6. Network and firewall</h2>
+          <p>The three ports are exposed <b>differently on purpose</b>.</p>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Port</th>
+                  <th scope="col">Default bind</th>
+                  <th scope="col">Reachable from</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>514/udp (intake)</td>
+                  <td><code>0.0.0.0</code></td>
+                  <td>Any host, so remote devices can send.</td>
+                </tr>
+                <tr>
+                  <td>5141/tcp (stream)</td>
+                  <td><code>127.0.0.1</code></td>
+                  <td>The same host only.</td>
+                </tr>
+                <tr>
+                  <td>5142/tcp (control)</td>
+                  <td><code>127.0.0.1</code></td>
+                  <td>The same host only.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Both TCP channels are protected by a shared token
+            (<code>&lt;data dir&gt;/control.token</code>, created by the installer
+            owned by the admin user with mode 0600). Console on the same machine
+            connects with no extra setup; other unprivileged users cannot.
+          </p>
+
+          <h3>Attaching Console from another machine</h3>
+          <p>
+            An SSH tunnel is the recommended route. If you instead expose the
+            channels directly, Server refuses non-loopback
+            <code>stream_addr</code> / <code>control_addr</code> unless
+            <code>VLT_SYSLOGD_ALLOW_NONLOOPBACK</code> is set, and the connection
+            still requires the token: paste the server's
+            <code>control.token</code> value into Console's "control token"
+            setting.
+          </p>
+
+          <h3>Firewall</h3>
+          <p>Windows, from an elevated PowerShell:</p>
+          <pre class="cmd"><code>New-NetFirewallRule -DisplayName "vlt-syslogd 514/udp" -Direction Inbound -Protocol UDP -LocalPort 514 -Action Allow</code></pre>
+          <p>
+            The macOS application firewall filters per application, not per port.
+            Allow incoming connections for <code>vlt-syslogd-srv</code> at the
+            prompt, or add it under System Settings → Network → Firewall →
+            Options.
+          </p>
+          <div class="caution">
+            <h4>"Service running" does not mean "port reachable"</h4>
+            <p>
+              These are separate facts. When remote logs do not arrive, the cause
+              is almost always the firewall or <code>bind_addr</code>.
+            </p>
+          </div>
+        </section>
+
+        <section id="console">
+          <h2>7. Using Console</h2>
+          <figure class="plate" style="margin-bottom: 2rem">
+            <div class="plate__frame">
+              <a href="assets/console-main.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/console-main.png"
+                  width="1698"
+                  height="989"
+                  alt="Console attached to Server, showing a green receiving indicator and service buttons."
+                />
+              </a>
+            </div>
+            <figcaption class="plate__caption">
+              <b>Console — attached to Server</b>
+              <a class="plate__full" href="assets/console-main.png" target="_blank" rel="noopener">Open full size</a>
+            </figcaption>
+          </figure>
+          <p>
+            Console does not need to be a service; just open the executable. After
+            the first launch, open <b>⚙ Settings</b> and check that it points at
+            your Server.
+          </p>
+          <ul>
+            <li>
+              Stream address → Server's <code>stream_addr</code> (default
+              <code>127.0.0.1:5141</code>)
+            </li>
+            <li>
+              Control address → Server's <code>control_addr</code> (default
+              <code>127.0.0.1:5142</code>)
+            </li>
+          </ul>
+
+          <div class="plate" style="margin-bottom: 2rem">
+            <div class="plate__frame">
+              <a href="assets/console-settings.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/console-settings.png"
+                  width="1698"
+                  height="989"
+                  alt="Console settings: connection addresses on top, server-side syslog settings below."
+                />
+              </a>
+            </div>
+            <div class="plate__caption">
+              <b>Console settings</b>
+              <span>
+                The top half is Console's own connection; the bottom half is
+                Server's configuration, read with "fetch current values" and
+                written back with "apply to server (restart)" — active only when
+                Server is registered as a service.
+              <a class="plate__full" href="assets/console-settings.png" target="_blank" rel="noopener">Open full size</a></span>
+            </div>
+          </div>
+
+          <p>
+            A green <b>● receiving</b> at the top means the stream channel is
+            live. The service start / stop / restart buttons work when Server was
+            registered by the bundled installer.
+          </p>
+          <ul>
+            <li>
+              Windows raises <b>UAC</b>; macOS asks for a
+              <b>password or Touch ID</b>. Approving continues the action.
+            </li>
+            <li>
+              With no service registered, the action fails immediately with a
+              plain message. <b>Saving the settings still succeeds</b> — only the
+              restart is skipped.
+            </li>
+          </ul>
+        </section>
+
+        <section id="verify">
+          <h2>8. Verifying it works</h2>
+          <ol>
+            <li>
+              <p>Is the service running (as a service, not merely a process)?</p>
+              <pre class="cmd"><code>sc.exe query vlt-syslogd-srv                                   # Windows
+sudo launchctl print system/com.veltrea.vlt-syslogd-srv        # macOS
+systemctl status vlt-syslogd-srv.service                       # Linux</code></pre>
+            </li>
+            <li>
+              <p>Is it listening?</p>
+              <pre class="cmd"><code>Get-NetUDPEndpoint -LocalPort 514                              # Windows
+lsof -nP -iUDP:514                                            # macOS / Linux</code></pre>
+            </li>
+            <li>
+              <p>Send one message locally and watch Console:</p>
+              <pre class="cmd"><code>printf '&lt;34&gt;Oct 11 22:14:15 myhost myapp: hello' | nc -u -w1 127.0.0.1 514</code></pre>
+              <p>
+                The indicator should turn green and a row should appear.
+              </p>
+            </li>
+            <li>
+              <p>
+                Only if remote devices will send: check reachability from
+                <b>another host</b> on the network. If nothing arrives, check
+                <code>bind_addr</code>, then the firewall, then the sender's
+                destination address.
+              </p>
+            </li>
+          </ol>
+        </section>
+
+        <section id="uninstall">
+          <h2>9. Uninstalling</h2>
+          <pre class="cmd"><code>cd Server; powershell -ExecutionPolicy Bypass -File .\uninstall-windows.ps1   # Windows (elevated)
+cd Server && sudo ./uninstall-macos.sh                                       # macOS
+cd Server && sudo ./uninstall-linux.sh                                       # Linux</code></pre>
+          <p>
+            These stop and deregister the service and remove the executable they
+            placed. <b>Configuration and logs are left in the data directory.</b>
+            Delete it by hand (<a href="#reference">§11</a>) to remove everything.
+            Portable was never installed, so deleting the file is enough.
+          </p>
+        </section>
+
+        <section id="trouble">
+          <h2>10. When something is wrong</h2>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Symptom</th>
+                  <th scope="col">Cause and fix</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Japanese renders as empty boxes</td>
+                  <td>
+                    No CJK font on this Linux system. Install
+                    <code>fonts-noto-cjk</code> or equivalent and restart the app.
+                  </td>
+                </tr>
+                <tr>
+                  <td>macOS says the app is damaged and will not open</td>
+                  <td>
+                    The quarantine flag on an ad-hoc signed download. Right click
+                    → Open, or
+                    <code>xattr -dr com.apple.quarantine &lt;app&gt;</code>.
+                  </td>
+                </tr>
+                <tr>
+                  <td>It starts but nothing ever arrives</td>
+                  <td>
+                    Check the bind result in the first row. If it failed, change
+                    the port. If it succeeded, check the sender's destination and
+                    the firewall.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Console always shows "disconnected"</td>
+                  <td>
+                    Server is not running, or the stream address does not match.
+                    Confirm Server is up and that Console's stream address equals
+                    Server's <code>stream_addr</code>.
+                  </td>
+                </tr>
+                <tr>
+                  <td>"Fetch current values" fails</td>
+                  <td>
+                    Control address mismatch, or an older Server without the
+                    control channel. Check <code>control_addr</code> and
+                    reinstall Server.
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    Console still reports "not installed" after installing
+                  </td>
+                  <td>
+                    Happens when the service name or launchd label was changed by
+                    hand. Console and the installer must name the same identifier
+                    (<a href="#reference">§11</a>).
+                  </td>
+                </tr>
+                <tr>
+                  <td>Service is running but remote logs never arrive</td>
+                  <td>
+                    Running is not the same as reachable. Check (1)
+                    <code>bind_addr</code> is <code>0.0.0.0</code> or a LAN IP and
+                    not <code>127.0.0.1</code>, (2) the firewall allows UDP 514,
+                    (3) the sender points at this machine's real address.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Remote Console cannot connect</td>
+                  <td>
+                    <code>stream_addr</code> and <code>control_addr</code> are
+                    loopback-only by default. Prefer an SSH tunnel. To expose them
+                    directly you need
+                    <code>VLT_SYSLOGD_ALLOW_NONLOOPBACK</code> on the server and
+                    the control token pasted into Console.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Console output is garbled on Windows</td>
+                  <td>
+                    The console is CP932. The installer and service are ASCII-only,
+                    so this does not affect operation.
+                  </td>
+                </tr>
+                <tr>
+                  <td>The install script will not run on Windows</td>
+                  <td>
+                    Open PowerShell as administrator and include
+                    <code>-ExecutionPolicy Bypass</code>.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="reference">
+          <h2>11. Identifiers and paths</h2>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">OS</th>
+                  <th scope="col">Service identifier</th>
+                  <th scope="col">Data directory</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Windows</td>
+                  <td><code>vlt-syslogd-srv</code></td>
+                  <td><code>C:\ProgramData\vlt-syslogd\</code></td>
+                </tr>
+                <tr>
+                  <td>macOS</td>
+                  <td><code>com.veltrea.vlt-syslogd-srv</code></td>
+                  <td><code>/usr/local/var/vlt-syslogd/</code></td>
+                </tr>
+                <tr>
+                  <td>Linux</td>
+                  <td><code>vlt-syslogd-srv.service</code></td>
+                  <td><code>/var/lib/vlt-syslogd/</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Environment variables</h3>
+          <div class="table-scroll">
+            <table>
+              <tbody>
+                <tr>
+                  <td><code>VLT_SYSLOGD_BIND</code></td>
+                  <td>Overrides the listening address of the GUI (Portable).</td>
+                </tr>
+                <tr>
+                  <td><code>VLT_SYSLOGD_DATA_DIR</code></td>
+                  <td>Overrides Server's data directory.</td>
+                </tr>
+                <tr>
+                  <td><code>VLT_SYSLOGD_CONSOLE_DATA_DIR</code></td>
+                  <td>Overrides where Console keeps its own settings.</td>
+                </tr>
+                <tr>
+                  <td><code>VLT_SYSLOGD_ALLOW_NONLOOPBACK</code></td>
+                  <td>
+                    Permits non-loopback <code>stream_addr</code> /
+                    <code>control_addr</code>. Refused by default.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            For the full architecture see the
+            <a
+              href="https://github.com/veltrea/vlt-syslogd/blob/main/DOCS/REFERENCE.md"
+              >reference</a
+            >, and for per-OS detail see
+            <a href="https://github.com/veltrea/vlt-syslogd/tree/main/DOCS"
+              >DOCS/</a
+            >.
+          </p>
+        </section>
+      </main>
+    </div>
+
+    <footer class="colophon">
+      <div class="wrap">
+        <div class="colophon__grid">
+          <div>
+            <h2>Read</h2>
+            <ul>
+              <li><a href="index.en.html">Overview</a></li>
+              <li><a href="manual.html">日本語マニュアル</a></li>
+              <li>
+                <a
+                  href="https://github.com/veltrea/vlt-syslogd/blob/main/DOCS/REFERENCE.md"
+                  >Architecture reference</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h2>Get</h2>
+            <ul>
+              <li>
+                <a href="https://github.com/veltrea/vlt-syslogd/releases/latest"
+                  >Latest release</a
+                >
+              </li>
+              <li>
+                <a href="https://github.com/veltrea/vlt-syslogd">Source code</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="colophon__end">
+          <span>© 2026 veltrea — MIT License</span>
+          <span>Covers v0.4.0</span>
+        </div>
+      </div>
+    </footer>
+
+    <script src="site.js" defer></script>
+  </body>
+</html>

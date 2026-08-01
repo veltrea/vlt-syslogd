@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>マニュアル — Veltrea Syslog Server</title>
+    <meta
+      name="description"
+      content="Veltrea Syslog Server (vlt-syslogd) の使い方。Portable をすぐ試す手順、画面の見かた、Windows / macOS / Linux で Server を常駐させる方法、Console の接続、トラブルシュート。"
+    />
+    <link rel="canonical" href="https://veltrea.github.io/vlt-syslogd/manual.html" />
+    <link rel="alternate" hreflang="ja" href="https://veltrea.github.io/vlt-syslogd/manual.html" />
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://veltrea.github.io/vlt-syslogd/manual.en.html"
+    />
+    <link rel="icon" href="assets/icon-256.png" type="image/png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="doc">
+    <!--
+      THESIS: 読む側の register。一面と同じ世界のまま、地を紙に反転して刷り上がりにする。
+      OWN-WORLD: 版下の紙白の地、非再現青の方眼、見出しと罫は原稿用紙の緑、指示は校正の朱。
+      STORY: 読者は自分の OS と自分のコースだけを辿り、詰まったら症状から逆引きできる。
+      FIRST VIEWPORT: 左に固定の目次（現在位置を朱で示す）、右に本文。冒頭は「どれを入れるか」の分岐表。
+      FORM: 組版指定紙・校正刷り／ seed 6c7700a0
+      FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+    -->
+    <a class="skip" href="#doc">本文へ移動</a>
+
+    <header class="masthead">
+      <a class="masthead__mark" href="./">
+        <img src="assets/icon-256.png" alt="" width="26" height="26" />
+        Veltrea Syslog Server
+      </a>
+      <nav aria-label="サイト内">
+        <a href="./">紹介</a>
+        <a href="manual.html" aria-current="page">マニュアル</a>
+        <a href="https://github.com/veltrea/vlt-syslogd">GitHub</a>
+        <span class="lang">
+          <a href="manual.html" aria-current="true" hreflang="ja">日本語</a>
+          <a href="manual.en.html" hreflang="en">EN</a>
+        </span>
+      </nav>
+    </header>
+
+    <div class="wrap doc__layout">
+      <!-- ===== 目次 ===== -->
+      <nav class="toc" aria-label="目次">
+        <h2>目次</h2>
+        <ol>
+          <li><a href="#start">どれを入れるか</a></li>
+          <li>
+            <a href="#portable">Portable をすぐ試す</a>
+            <ol>
+              <li><a href="#portable-win">Windows</a></li>
+              <li><a href="#portable-mac">macOS</a></li>
+              <li><a href="#portable-linux">Linux</a></li>
+            </ol>
+          </li>
+          <li>
+            <a href="#screen">画面の見かた</a>
+            <ol>
+              <li><a href="#screen-columns">5 つの列</a></li>
+              <li><a href="#screen-enc">Enc 欄の読み方</a></li>
+              <li><a href="#screen-prefs">環境設定</a></li>
+            </ol>
+          </li>
+          <li>
+            <a href="#server">Server を常駐させる</a>
+            <ol>
+              <li><a href="#server-win">Windows サービス</a></li>
+              <li><a href="#server-mac">macOS / launchd</a></li>
+              <li><a href="#server-linux">Linux / systemd</a></li>
+            </ol>
+          </li>
+          <li><a href="#config">設定ファイル</a></li>
+          <li><a href="#network">ネットワークとファイアウォール</a></li>
+          <li><a href="#console">Console を使う</a></li>
+          <li><a href="#verify">動作確認</a></li>
+          <li><a href="#uninstall">アンインストール</a></li>
+          <li><a href="#trouble">困ったとき</a></li>
+          <li><a href="#reference">識別子とパスの一覧</a></li>
+        </ol>
+      </nav>
+
+      <!-- ===== 本文 ===== -->
+      <main class="doc__body" id="doc">
+        <h1>マニュアル</h1>
+        <p>
+          Veltrea Syslog Server（パッケージ名 <code>vlt-syslogd</code>）は、
+          syslog を受信して表示するソフトです。バージョン v0.4.0 に対応します。
+        </p>
+
+        <section id="start">
+          <h2>1. どれを入れるか</h2>
+          <p>
+            使い方が 3 通りあります。まず自分がどれをやりたいのかを選んでください。
+            迷ったら <b>Portable</b> です。サービス登録も管理者権限も要らず、
+            起動すればすぐ動きます。
+          </p>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">やりたいこと</th>
+                  <th scope="col">入れるもの</th>
+                  <th scope="col">読む節</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>とにかく試したい / 1 台で完結させたい</td>
+                  <td>Portable だけ（インストール不要）</td>
+                  <td><a href="#portable">2</a> → <a href="#screen">3</a></td>
+                </tr>
+                <tr>
+                  <td>常時 syslog を受け続けたい（サーバ用途）</td>
+                  <td>Server（常駐）＋ Console（見る画面）</td>
+                  <td>
+                    <a href="#server">4</a> → <a href="#config">5</a> →
+                    <a href="#network">6</a> → <a href="#console">7</a> →
+                    <a href="#verify">8</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td>すでに動いている Server を別の画面から見たい</td>
+                  <td>Console だけ</td>
+                  <td><a href="#console">7</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>三つの部品</h3>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">呼び名</th>
+                  <th scope="col">実行ファイル</th>
+                  <th scope="col">役割</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Portable</td>
+                  <td><code>vlt-syslogd-portable</code></td>
+                  <td>自分で UDP を待ち受ける単体 GUI。サービス不要。</td>
+                </tr>
+                <tr>
+                  <td>Server</td>
+                  <td><code>vlt-syslogd-srv</code></td>
+                  <td>
+                    画面を持たない常駐エンジン。UDP で受信し、Console へ配信する。
+                  </td>
+                </tr>
+                <tr>
+                  <td>Console</td>
+                  <td><code>vlt-syslogd-console</code></td>
+                  <td>Server に TCP で接続して表示・操作する GUI。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Windows ではいずれも <code>.exe</code> が付きます。実行ファイルは
+            <a href="https://github.com/veltrea/vlt-syslogd/releases/latest"
+              >GitHub Releases</a
+            >
+            から入手してください。ソースからビルドする場合は
+            <a
+              href="https://github.com/veltrea/vlt-syslogd/blob/main/DOCS/BUILD.ja.md"
+              >BUILD.ja.md</a
+            >
+            を参照してください（ビルド後の手順は配布バイナリと同じです）。
+          </p>
+        </section>
+
+        <section id="portable">
+          <h2>2. Portable をすぐ試す</h2>
+          <p>
+            Portable は単体で UDP 514 を待ち受ける GUI です。
+            展開して起動し、テスト送信して行が増えれば成功です。
+          </p>
+
+          <h3 id="portable-win">2.1 Windows</h3>
+          <p>
+            <code>vlt-syslogd-portable-windows-v0.4.0.zip</code> を展開し、
+            <code>vlt-syslogd-portable.exe</code> をダブルクリックします。
+            SmartScreen の警告が出たら「詳細情報」→「実行」を選んでください。
+            Windows には特権ポートの概念が無いので、514 の待ち受けに管理者権限は要りません。
+          </p>
+          <pre class="cmd"><code>$u = New-Object System.Net.Sockets.UdpClient
+$b = [Text.Encoding]::UTF8.GetBytes('&lt;132&gt;auth: 認証に失敗しました')
+$u.Send($b, $b.Length, '127.0.0.1', 514) | Out-Null; $u.Close()</code></pre>
+
+          <h3 id="portable-mac">2.2 macOS</h3>
+          <p>
+            <code>vlt-syslogd-macos-portable-v0.4.0.dmg</code> を開き、
+            <code>vlt-syslogd-portable.app</code> を取り出して起動します。
+            macOS 版は ad-hoc 署名（公証なし）のため、初回は Gatekeeper に止められます。
+            右クリック →「開く」を一度行うか、隔離属性を外してください。
+          </p>
+          <pre class="cmd"><code>xattr -dr com.apple.quarantine vlt-syslogd-portable.app</code></pre>
+          <div class="caution">
+            <h4>Portable 版は隔離属性を必ず外してください</h4>
+            <p>
+              Portable 版はデータを <code>.app</code> の隣に置きます。
+              隔離属性が残っていると App Translocation によって
+              <code>.app</code> が読み取り専用の別の場所から起動され、
+              その置き場所が壊れます。
+            </p>
+          </div>
+          <pre class="cmd"><code>printf '&lt;34&gt;Oct 11 22:14:15 myhost myapp: hello' | nc -u -w1 127.0.0.1 514</code></pre>
+
+          <h3 id="portable-linux">2.3 Linux</h3>
+          <p>
+            単一の ELF バイナリです。実行権限を付けて起動します。
+            514 は特権ポートなので、bind に失敗する場合は root で実行するか
+            <code>CAP_NET_BIND_SERVICE</code> を付与してください。
+          </p>
+          <pre class="cmd"><code>chmod +x vlt-syslogd-linux-x86_64-portable-v0.4.0
+./vlt-syslogd-linux-x86_64-portable-v0.4.0</code></pre>
+          <p>
+            GUI の表示には CJK フォントが必要です。入っていないと日本語が
+            □（豆腐）になります。<code>fonts-noto-cjk</code> 等を入れてください。
+          </p>
+        </section>
+
+        <section id="screen">
+          <h2>3. 画面の見かた</h2>
+
+          <figure class="plate" style="margin-bottom: 2rem">
+            <div class="plate__frame">
+              <a href="assets/portable-main.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/portable-main.png"
+                  width="1698"
+                  height="989"
+                  alt="Portable のログ一覧。Time・Tag・Severity・Enc・Message の 5 列に、UTF-8 と Shift_JIS のメッセージが混在して表示されている。"
+                />
+              </a>
+            </div>
+            <figcaption class="plate__caption">
+              <b>Portable — ログ一覧</b>
+              <a class="plate__full" href="assets/portable-main.png" target="_blank" rel="noopener">原寸で開く</a>
+            </figcaption>
+          </figure>
+
+          <h3 id="screen-columns">3.1 5 つの列</h3>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">列</th>
+                  <th scope="col">中身</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Time</td>
+                  <td>
+                    受信した時刻（ミリ秒まで）。送信側が名乗った日時ではなく、
+                    こちらが受け取った時刻です。
+                  </td>
+                </tr>
+                <tr>
+                  <td>Tag</td>
+                  <td>
+                    本文の先頭から取り出したタグ。<code
+                      >&lt;PRI&gt;tag: 本文</code
+                    >
+                    のようにコロンの前に空白を含まない語があるときだけ埋まり、
+                    それ以外は <code>-</code> になります。
+                  </td>
+                </tr>
+                <tr>
+                  <td>Severity</td>
+                  <td>
+                    PRI から取り出した重大度。Emergency / Alert / Critical /
+                    Error / Warning / Notice / Informational / Debug の 8 段で、
+                    色でも区別されます。
+                  </td>
+                </tr>
+                <tr>
+                  <td>Enc</td>
+                  <td>
+                    この 1 通を復号するのに使った文字コードと、
+                    そう決めた根拠。次の項で説明します。
+                  </td>
+                </tr>
+                <tr>
+                  <td>Message</td>
+                  <td>復号した本文。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            <b>Filter</b> 欄に文字を入れると、本文とタグを対象に絞り込みます。
+            <b>Auto-scroll</b> を外すと最新行への追従が止まるので、
+            流れているログの中で 1 行を読みたいときに使ってください。
+            <b>🗑 Clear</b> は表示中の行を捨てます（保存済みのログファイルは消えません）。
+          </p>
+          <p>
+            行を右クリックすると <b>Copy Message</b>（復号後の本文）と
+            <b>Copy as Hex</b>（届いた生のバイト列）を取り出せます。
+            表示がおかしいと思ったときは Hex を見れば、
+            送信側とこちらのどちらの問題かが切り分けられます。
+          </p>
+
+          <h3 id="screen-enc">3.2 Enc 欄の読み方</h3>
+          <p>
+            文字コードの判定は通信全体ではなく <b>1 通ごと</b>に行います。
+            同じポートに Shift_JIS の機器と UTF-8 の機器が混ざっていても構いません。
+          </p>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Enc の表示</th>
+                  <th scope="col">意味</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>UTF-8</code> / <code>Shift_JIS</code></td>
+                  <td>
+                    RFC 3164 形式などで届いたものを、バイト列から判定して復号した。
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>Shift_JIS (MSG-SD/BOM-Missing)</code></td>
+                  <td>
+                    RFC 5424 の構造化データが
+                    <code>charset="Shift_JIS"</code> と宣言していたので、
+                    それに従った。BOM は付いていなかった。
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>UTF-8 (MSG-UTF8/BOM)</code></td>
+                  <td>宣言は無かったが BOM があったので UTF-8 として読んだ。</td>
+                </tr>
+                <tr>
+                  <td><code>UTF-8 (Implicit)</code></td>
+                  <td>
+                    宣言も BOM も無く、UTF-8 として妥当だったのでそう解釈した。
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>Shift_JIS (Guess)</code></td>
+                  <td>
+                    手掛かりが無く、バイト列から推定した。ここだけは推測です。
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>system</code></td>
+                  <td>
+                    受信したものではなく、vlt-syslogd 自身が出した行
+                    （待ち受けの成否など）。
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="screen-prefs">3.3 環境設定</h3>
+          <div class="plate plate--split" style="margin-bottom: 2rem">
+            <div class="plate__frame">
+              <img
+                src="assets/portable-menu-detail.png"
+                width="620"
+                height="170"
+                alt="ファイル(File) メニューを開いたところ。環境設定…、ログフォルダを開く、終了の 3 項目が並ぶ。"
+              />
+            </div>
+            <div class="plate__caption">
+              <b>ファイル(File) メニュー</b>
+              <span>
+                環境設定のほか、ログの保存先フォルダを OS のファイルマネージャで
+                開く項目があります。macOS ではアプリメニュー側に入ります。
+              </span>
+            </div>
+          </div>
+          <div class="plate plate--split" style="margin-bottom: 2rem">
+            <div class="plate__frame">
+              <a href="assets/portable-prefs.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/portable-prefs-detail.png"
+                  width="760"
+                  height="215"
+                  alt="環境設定ダイアログ。待ち受けポートとログ保存先の 2 項目。"
+                />
+              </a>
+            </div>
+            <div class="plate__caption">
+              <b>ファイル(File) → 環境設定…</b>
+              <span>
+                待ち受けポートとログの保存先だけの設定です。
+                「適用」を押すと待ち受けし直します。
+              <a class="plate__full" href="assets/portable-prefs.png" target="_blank" rel="noopener">全体を開く</a></span>
+            </div>
+          </div>
+          <p>
+            起動時の bind の成否は、ログ一覧の 1 行目にそのまま出ます
+            （<code>Listening on 0.0.0.0:514 (UDP)</code>）。
+            514 が他のプロセスに使われていて失敗した場合は、
+            ここで 1024 番以上のポートに変えてください。送信側も同じポートに合わせます。
+          </p>
+          <p>
+            GUI 版の待ち受けアドレスは、環境変数
+            <code>VLT_SYSLOGD_BIND</code> でも上書きできます
+            （例: <code>VLT_SYSLOGD_BIND=0.0.0.0:5514</code>）。
+          </p>
+        </section>
+
+        <section id="server">
+          <h2>4. Server を常駐させる</h2>
+          <p>
+            Server は画面を持たない常駐プログラムです。
+            同梱のインストールスクリプトが「実行ファイル配置 → データフォルダ作成 →
+            サービス登録 → 起動」までを行います。管理者権限が要るのは
+            <b>インストール時の 1 回だけ</b>で、以後は OS の起動時に自動で立ち上がります。
+          </p>
+
+          <h3 id="server-win">4.1 Windows サービス</h3>
+          <p><b>管理者として実行</b>した PowerShell から:</p>
+          <pre class="cmd"><code>cd Server
+powershell -ExecutionPolicy Bypass -File .\install-windows.ps1</code></pre>
+          <div class="table-scroll">
+            <table>
+              <tbody>
+                <tr>
+                  <td>実行ファイル</td>
+                  <td><code>C:\Program Files\vlt-syslogd\vlt-syslogd-srv.exe</code></td>
+                </tr>
+                <tr>
+                  <td>データ / ログ</td>
+                  <td><code>C:\ProgramData\vlt-syslogd\</code></td>
+                </tr>
+                <tr>
+                  <td>サービス名</td>
+                  <td><code>vlt-syslogd-srv</code>（スタートアップ種別: 自動）</td>
+                </tr>
+                <tr>
+                  <td>状態確認</td>
+                  <td><code>sc.exe query vlt-syslogd-srv</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            PowerShell スクリプトは CP932 での文字化けを避けるため、
+            意図的に ASCII のみで書かれています。日本語の説明はこのページにあります。
+          </p>
+
+          <h3 id="server-mac">4.2 macOS / launchd</h3>
+          <pre class="cmd"><code>cd Server
+sudo ./install-macos.sh</code></pre>
+          <div class="table-scroll">
+            <table>
+              <tbody>
+                <tr>
+                  <td>実行ファイル</td>
+                  <td><code>/usr/local/bin/vlt-syslogd-srv</code></td>
+                </tr>
+                <tr>
+                  <td>データ / ログ</td>
+                  <td><code>/usr/local/var/vlt-syslogd/</code></td>
+                </tr>
+                <tr>
+                  <td>LaunchDaemon</td>
+                  <td>
+                    <code
+                      >/Library/LaunchDaemons/com.veltrea.vlt-syslogd-srv.plist</code
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td>状態確認</td>
+                  <td>
+                    <code
+                      >sudo launchctl print system/com.veltrea.vlt-syslogd-srv</code
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            LaunchDaemon は root で動くため、514 を bind できます。
+            インストール時に管理者認証を求められるのはこのためです。
+          </p>
+
+          <h3 id="server-linux">4.3 Linux / systemd</h3>
+          <pre class="cmd"><code>cd Server
+sudo ./install-linux.sh</code></pre>
+          <div class="table-scroll">
+            <table>
+              <tbody>
+                <tr>
+                  <td>実行ファイル</td>
+                  <td><code>/usr/local/bin/vlt-syslogd-srv</code></td>
+                </tr>
+                <tr>
+                  <td>データ / ログ</td>
+                  <td><code>/var/lib/vlt-syslogd/</code></td>
+                </tr>
+                <tr>
+                  <td>ユニット</td>
+                  <td><code>/etc/systemd/system/vlt-syslogd-srv.service</code></td>
+                </tr>
+                <tr>
+                  <td>状態確認</td>
+                  <td><code>systemctl status vlt-syslogd-srv.service</code></td>
+                </tr>
+                <tr>
+                  <td>ログ確認</td>
+                  <td><code>journalctl -u vlt-syslogd-srv.service -f</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            514 を開くため、ユニットは既定で root で動きます。
+            非 root で動かしたい場合は、ユニットファイル内に専用ユーザー ＋
+            <code>AmbientCapabilities=CAP_NET_BIND_SERVICE</code>
+            のコメントヒントがあります。
+          </p>
+        </section>
+
+        <section id="config">
+          <h2>5. 設定ファイル</h2>
+          <p>
+            Server は<b>初回起動時</b>にデータフォルダへ
+            <code>config.toml</code> を自動生成します。
+            既定のままで動くので、ポートやネットワークを変えたいときだけ触ってください。
+          </p>
+          <pre><code>[server]
+bind_addr    = "0.0.0.0:514"        # syslog 受信 (UDP)
+stream_addr  = "127.0.0.1:5141"     # Console への配信 (TCP)
+control_addr = "127.0.0.1:5142"     # 制御チャネル (TCP)
+
+[logging]
+level        = "info"
+max_size_mb  = 10
+keep_files   = 7</code></pre>
+          <p>
+            変更したらサービスを再起動するか、Console の
+            <b>サーバへ適用(再起動)</b> を使ってください。
+            データフォルダの場所は環境変数 <code>VLT_SYSLOGD_DATA_DIR</code>
+            で上書きできます（テスト用）。
+          </p>
+        </section>
+
+        <section id="network">
+          <h2>6. ネットワークとファイアウォール</h2>
+          <p>3 つのポートは<b>意図的に</b>公開範囲を変えてあります。</p>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">ポート</th>
+                  <th scope="col">既定 bind</th>
+                  <th scope="col">届く範囲</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>514/udp（受信）</td>
+                  <td><code>0.0.0.0</code></td>
+                  <td>任意のホスト。リモート機器が syslog を送れる。</td>
+                </tr>
+                <tr>
+                  <td>5141/tcp（配信）</td>
+                  <td><code>127.0.0.1</code></td>
+                  <td>同一ホストのみ。</td>
+                </tr>
+                <tr>
+                  <td>5142/tcp（制御）</td>
+                  <td><code>127.0.0.1</code></td>
+                  <td>同一ホストのみ。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            配信と制御のチャネルは、どちらも共有トークン
+            （<code>&lt;データフォルダ&gt;/control.token</code>、
+            インストーラが管理ユーザー所有・0600 で生成）で保護されています。
+            同一マシンの Console はそのまま接続でき、他の非特権ユーザーは接続できません。
+          </p>
+
+          <h3>別マシンから Console を繋ぐ</h3>
+          <p>
+            SSH トンネル経由を推奨します。直接到達できるアドレスに変更する場合は、
+            Server 側で環境変数 <code>VLT_SYSLOGD_ALLOW_NONLOOPBACK</code>
+            を設定する必要があります（設定しない限り、非ループバックの
+            <code>stream_addr</code> / <code>control_addr</code> は拒否されます）。
+            そのうえで Console の環境設定「制御トークン」に、
+            サーバの <code>control.token</code> の値を貼り付けてください。
+          </p>
+
+          <h3>ファイアウォール</h3>
+          <p>Windows（管理者 PowerShell）:</p>
+          <pre class="cmd"><code>New-NetFirewallRule -DisplayName "vlt-syslogd 514/udp" -Direction Inbound -Protocol UDP -LocalPort 514 -Action Allow</code></pre>
+          <p>
+            macOS のアプリケーションファイアウォールはポートではなくアプリ単位で
+            フィルタします。プロンプトで <code>vlt-syslogd-srv</code>
+            の着信接続を許可するか、システム設定 → ネットワーク → ファイアウォール →
+            オプションから追加してください。
+          </p>
+          <div class="caution">
+            <h4>「サービス稼働中」は「ポート到達可能」ではありません</h4>
+            <p>
+              サービスが動いていることと、ポートに届くことは別問題です。
+              リモート機器のログが来ないときの原因は、ほとんどがファイアウォールか
+              <code>bind_addr</code> です。
+            </p>
+          </div>
+        </section>
+
+        <section id="console">
+          <h2>7. Console を使う</h2>
+          <figure class="plate" style="margin-bottom: 2rem">
+            <div class="plate__frame">
+              <a href="assets/console-main.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/console-main.png"
+                  width="1698"
+                  height="989"
+                  alt="Console が Server に接続している画面。上部に緑の「受信中 (127.0.0.1:5141)」表示とサービス操作ボタンが並ぶ。"
+                />
+              </a>
+            </div>
+            <figcaption class="plate__caption">
+              <b>Console — 常駐 Server に接続中</b>
+              <a class="plate__full" href="assets/console-main.png" target="_blank" rel="noopener">原寸で開く</a>
+            </figcaption>
+          </figure>
+          <p>
+            Console はサービスにする必要はありません。実行ファイルを開くだけです。
+            初回起動後、<b>⚙ 設定</b> を開いて接続先が Server と一致しているか確認します。
+          </p>
+          <ul>
+            <li>配信アドレス → Server の <code>stream_addr</code>（既定 <code>127.0.0.1:5141</code>）</li>
+            <li>制御アドレス → Server の <code>control_addr</code>（既定 <code>127.0.0.1:5142</code>）</li>
+          </ul>
+
+          <div class="plate" style="margin-bottom: 2rem">
+            <div class="plate__frame">
+              <a href="assets/console-settings.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/console-settings.png"
+                  width="1698"
+                  height="989"
+                  alt="Console の環境設定。接続設定（配信アドレス・制御アドレス）と、サーバ設定（受信アドレス・ログレベル等）が並ぶ。"
+                />
+              </a>
+            </div>
+            <div class="plate__caption">
+              <b>Console の環境設定</b>
+              <span>
+                上半分が Console 自身の接続先、下半分が Server の設定です。
+                下半分は「現在値を取得」で Server から読み出し、
+                「サーバへ適用(再起動)」で書き戻します（サービス登録済みのときだけ有効）。
+              <a class="plate__full" href="assets/console-settings.png" target="_blank" rel="noopener">原寸で開く</a></span>
+            </div>
+          </div>
+
+          <p>
+            画面上部の <b>● 受信中</b> が緑なら配信チャネルが繋がっています。
+            <b>サービス操作</b> の開始 / 停止 / 再起動は、Server が同梱の
+            インストーラでサービス登録されているときに動作します。
+          </p>
+          <ul>
+            <li>
+              Windows では <b>UAC</b>、macOS では
+              <b>パスワード / Touch ID</b> のダイアログが出ます。承認すると続行します。
+            </li>
+            <li>
+              サービス未登録のときは、操作は分かりやすいメッセージで即座に失敗します。
+              <b>設定の保存自体は成功</b>し、再起動だけがスキップされます。
+            </li>
+          </ul>
+        </section>
+
+        <section id="verify">
+          <h2>8. 動作確認</h2>
+          <ol>
+            <li>
+              <p>サービスが稼働しているか（プロセスの有無ではなく、サービスとして）:</p>
+              <pre class="cmd"><code>sc.exe query vlt-syslogd-srv                                   # Windows
+sudo launchctl print system/com.veltrea.vlt-syslogd-srv        # macOS
+systemctl status vlt-syslogd-srv.service                       # Linux</code></pre>
+            </li>
+            <li>
+              <p>待ち受けているか:</p>
+              <pre class="cmd"><code>Get-NetUDPEndpoint -LocalPort 514                              # Windows
+lsof -nP -iUDP:514                                            # macOS / Linux</code></pre>
+            </li>
+            <li>
+              <p>ローカルから 1 通投げて、Console に出るか:</p>
+              <pre class="cmd"><code>printf '&lt;34&gt;Oct 11 22:14:15 myhost myapp: hello' | nc -u -w1 127.0.0.1 514</code></pre>
+              <p>
+                状態インジケータが緑（● 受信中）になり、表に行が増えれば OK です。
+              </p>
+            </li>
+            <li>
+              <p>
+                リモート機器から送る場合のみ — ネットワーク上の<b>別ホスト</b>から
+                届くかを確かめます。届かないときは
+                <code>bind_addr</code>、ファイアウォール、送信側の宛先 IP の順に確認してください。
+              </p>
+            </li>
+          </ol>
+        </section>
+
+        <section id="uninstall">
+          <h2>9. アンインストール</h2>
+          <pre class="cmd"><code>cd Server; powershell -ExecutionPolicy Bypass -File .\uninstall-windows.ps1   # Windows（管理者）
+cd Server && sudo ./uninstall-macos.sh                                       # macOS
+cd Server && sudo ./uninstall-linux.sh                                       # Linux</code></pre>
+          <p>
+            サービスを停止・解除し、配置した実行ファイルを削除します。
+            <b>設定とログはデータフォルダに残します。</b>
+            完全に消したい場合はデータフォルダ（<a href="#reference">§11</a>）を
+            手で削除してください。Portable はインストールしていないので、
+            ファイルを捨てるだけです。
+          </p>
+        </section>
+
+        <section id="trouble">
+          <h2>10. 困ったとき</h2>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">症状</th>
+                  <th scope="col">原因と対処</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>日本語が □（豆腐）になる</td>
+                  <td>
+                    Linux で CJK フォントが入っていない。
+                    <code>fonts-noto-cjk</code> 等を入れて起動し直す。
+                  </td>
+                </tr>
+                <tr>
+                  <td>アプリが開けない（macOS で「壊れている」）</td>
+                  <td>
+                    ad-hoc 署名の配布物に付く隔離属性。右クリック →「開く」、
+                    または <code>xattr -dr com.apple.quarantine &lt;app&gt;</code>。
+                  </td>
+                </tr>
+                <tr>
+                  <td>起動しても 1 通も来ない</td>
+                  <td>
+                    1 行目の bind の成否を確認する。失敗しているなら別のポートへ。
+                    成功しているなら送信側の宛先とファイアウォールを確認する。
+                  </td>
+                </tr>
+                <tr>
+                  <td>Console が常に「○ 切断」</td>
+                  <td>
+                    Server 未起動、または配信アドレス不一致。Server の稼働と、
+                    Console の配信アドレス ＝ Server の
+                    <code>stream_addr</code> を確認する。
+                  </td>
+                </tr>
+                <tr>
+                  <td>設定の「現在値を取得」が失敗する</td>
+                  <td>
+                    制御アドレス不一致、または制御ポート未対応の古い Server。
+                    <code>control_addr</code> を確認し、Server を入れ直す。
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    インストールしたのに Console のサービス状態が「未インストール」
+                  </td>
+                  <td>
+                    サービス名 / launchd ラベルを独自に変えたときに起きる。
+                    Console とインストーラが同じ識別子を指す必要がある（<a
+                      href="#reference"
+                      >§11</a
+                    >）。
+                  </td>
+                </tr>
+                <tr>
+                  <td>サービスは稼働中なのにリモート機器のログが来ない</td>
+                  <td>
+                    「稼働中」≠「到達可能」。(1) <code>bind_addr</code> が
+                    <code>127.0.0.1</code> でなく <code>0.0.0.0</code> / LAN IP か、
+                    (2) ファイアウォールが UDP 514 を許可しているか、
+                    (3) 送信側が Server の実 IP を向いているか。
+                  </td>
+                </tr>
+                <tr>
+                  <td>リモートの Console が接続できない</td>
+                  <td>
+                    <code>stream_addr</code> / <code>control_addr</code>
+                    は既定でループバック限定。SSH トンネル経由を推奨。
+                    直接公開するなら
+                    <code>VLT_SYSLOGD_ALLOW_NONLOOPBACK</code> の設定と、
+                    Console 側への制御トークンの貼り付けが必要。
+                  </td>
+                </tr>
+                <tr>
+                  <td>コンソール出力が文字化けする（Windows）</td>
+                  <td>
+                    コンソールが CP932 のため。インストーラとサービスは ASCII のみで
+                    書かれているので、動作には影響しない。
+                  </td>
+                </tr>
+                <tr>
+                  <td>インストールスクリプトが実行できない（Windows）</td>
+                  <td>
+                    管理者として PowerShell を開き、
+                    <code>-ExecutionPolicy Bypass</code> を付けて実行しているか確認する。
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="reference">
+          <h2>11. 識別子とパスの一覧</h2>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">OS</th>
+                  <th scope="col">サービス識別子</th>
+                  <th scope="col">データフォルダ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Windows</td>
+                  <td><code>vlt-syslogd-srv</code></td>
+                  <td><code>C:\ProgramData\vlt-syslogd\</code></td>
+                </tr>
+                <tr>
+                  <td>macOS</td>
+                  <td><code>com.veltrea.vlt-syslogd-srv</code></td>
+                  <td><code>/usr/local/var/vlt-syslogd/</code></td>
+                </tr>
+                <tr>
+                  <td>Linux</td>
+                  <td><code>vlt-syslogd-srv.service</code></td>
+                  <td><code>/var/lib/vlt-syslogd/</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>環境変数</h3>
+          <div class="table-scroll">
+            <table>
+              <tbody>
+                <tr>
+                  <td><code>VLT_SYSLOGD_BIND</code></td>
+                  <td>GUI 版（Portable）の待ち受けアドレスを上書きする。</td>
+                </tr>
+                <tr>
+                  <td><code>VLT_SYSLOGD_DATA_DIR</code></td>
+                  <td>Server のデータフォルダを上書きする。</td>
+                </tr>
+                <tr>
+                  <td><code>VLT_SYSLOGD_CONSOLE_DATA_DIR</code></td>
+                  <td>Console 自身の設定の置き場所を上書きする。</td>
+                </tr>
+                <tr>
+                  <td><code>VLT_SYSLOGD_ALLOW_NONLOOPBACK</code></td>
+                  <td>
+                    非ループバックの <code>stream_addr</code> /
+                    <code>control_addr</code> を許可する。既定では拒否。
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            さらに詳しい構成は
+            <a
+              href="https://github.com/veltrea/vlt-syslogd/blob/main/DOCS/REFERENCE.ja.md"
+              >構成リファレンス</a
+            >
+            に、OS 別の詳細手順は
+            <a
+              href="https://github.com/veltrea/vlt-syslogd/tree/main/DOCS"
+              >DOCS/</a
+            >
+            にあります。
+          </p>
+        </section>
+      </main>
+    </div>
+
+    <footer class="colophon">
+      <div class="wrap">
+        <div class="colophon__grid">
+          <div>
+            <h2>読む</h2>
+            <ul>
+              <li><a href="./">紹介ページ</a></li>
+              <li><a href="manual.en.html">English manual</a></li>
+              <li>
+                <a
+                  href="https://github.com/veltrea/vlt-syslogd/blob/main/DOCS/REFERENCE.ja.md"
+                  >構成リファレンス</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h2>入手</h2>
+            <ul>
+              <li>
+                <a href="https://github.com/veltrea/vlt-syslogd/releases/latest"
+                  >最新リリース</a
+                >
+              </li>
+              <li>
+                <a href="https://github.com/veltrea/vlt-syslogd">ソースコード</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="colophon__end">
+          <span>© 2026 veltrea — MIT License</span>
+          <span>v0.4.0 対応</span>
+        </div>
+      </div>
+    </footer>
+
+    <script src="site.js" defer></script>
+  </body>
+</html>
