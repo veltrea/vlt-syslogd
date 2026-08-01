@@ -1,70 +1,47 @@
 @charset "UTF-8";
 /* ==========================================================================
    Veltrea Syslog Server — site styles
-   世界: 写植・活版時代の「組版指定紙 / 校正刷り」。
-   地は原稿用紙の緑、紙面は版下の白、指示は校正の朱、罫は非再現青。
+
+   方針: この分野の定番を、丁寧にやる。
+   小さな無料ツールのサイト（Visual Syslog Server / lnav / klogg など）は
+   例外なく「アプリのウィンドウを実寸で真ん中に置き、他に何もしない」。
+   演出しているのは席数を売っている側だけなので、そちらには寄せない。
+
+   したがってここには、飾りの背景・装飾用の罫・独自書体・世界観の演出を
+   一切置かない。色は意味のあるところ——重大度と状態——にだけ使う。
    ========================================================================== */
 
-/* --- 1. 書体 ------------------------------------------------------------ */
-/* 見出し用: Shippori Mincho (SIL OFL 1.1) をサブセットして自前配信。
-   本文は各 OS の日本語フォントに任せる —— 本製品自身が OS の日本語
-   フォントを読み込んで文字を出すソフトなので、字面もそれに合わせる。 */
-@font-face {
-  font-family: "Shippori Display";
-  src: url("assets/fonts/shippori-subset.woff2") format("woff2");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
-  /* 色 */
-  --sumi: #131815;
-  --viridian: #0a3a2c;
-  --viridian-deep: #062a1f;
-  --viridian-mid: #12594a;
-  --paper: #f2f1ea;
-  --paper-2: #e3e2d8;
-  --paper-3: #cfcec2;
-  --shu: #d4381f;
-  --shu-bright: #f2593c;
-  /* 紙の上で本文級の朱を使うときは、こちらの濃い朱（4.5:1 以上）を使う */
-  --shu-ink: #b62f18;
-  --aopen: #8cc0de;
-  --aopen-deep: #2f6a8c;
+  /* 地と字 */
+  --bg: #fbfbf9;
+  --bg-2: #f3f3f0;
+  --band: #14161a; /* スクリーンショットが載る暗い帯 */
+  --fg: #16191c;
+  --fg-dim: #545b62;
+  --fg-faint: #666d75;
+  --rule: #e2e2dc;
+  --rule-strong: #c8c8c0;
+  --rule-ui: #8c8c84; /* 押せるものの輪郭。3:1 を満たす濃さ */
 
-  /* 地の上の文字 */
-  --on-viridian: #f2f1ea;
-  --on-viridian-dim: #a9c6ba;
-  /* 紙の上の文字 */
-  --on-paper: #1a211c;
-  --on-paper-dim: #56635b;
+  /* 重大度の色。アプリ側の配色を明るい地に合わせて濃くしたもの。
+     ここ以外では使わない（装飾に流用しない）。 */
+  --sev-ok: #1a7f37;
+  --sev-warn: #7f5900;
+  --sev-error: #b3261e;
+  --sev-debug: #56499f;
 
   /* 版面 */
-  --measure: 34em;
-  --gutter: clamp(1.25rem, 4vw, 3rem);
-  --page: 76rem;
+  --page: 68rem;
+  --measure: 38em;
+  --gutter: clamp(1.15rem, 4vw, 2.5rem);
 
-  /* 級・歯送り */
-  --step--1: clamp(0.78rem, 0.75rem + 0.15vw, 0.86rem);
-  --step-0: clamp(0.95rem, 0.9rem + 0.25vw, 1.06rem);
-  --step-1: clamp(1.1rem, 1rem + 0.5vw, 1.3rem);
-  --step-2: clamp(1.35rem, 1.15rem + 1vw, 1.85rem);
-  --step-3: clamp(1.8rem, 1.4rem + 2vw, 2.9rem);
-  --step-4: clamp(2.4rem, 1.6rem + 4.2vw, 5rem);
-
-  --font-display: "Shippori Display", "Hiragino Mincho ProN", "Yu Mincho",
-    "Noto Serif JP", serif;
-  --font-body: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic",
-    "Noto Sans JP", "Meiryo", system-ui, sans-serif;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Noto Sans JP",
+    Meiryo, system-ui, sans-serif;
   --font-data: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas,
     "Noto Sans Mono", monospace;
-
-  --rule: 1px solid color-mix(in srgb, var(--aopen) 40%, transparent);
-  --rule-paper: 1px solid var(--paper-3);
 }
 
-/* --- 2. 素地 ------------------------------------------------------------ */
 *,
 *::before,
 *::after {
@@ -73,7 +50,7 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 5.5rem;
+  scroll-padding-top: 4.5rem;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -85,39 +62,12 @@ html {
 
 body {
   margin: 0;
-  background: var(--viridian);
-  color: var(--on-viridian);
-  font-family: var(--font-body);
-  font-size: var(--step-0);
-  line-height: 1.85;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.75;
   font-feature-settings: "palt" 1;
-  overflow-x: hidden;
-}
-
-/* 非再現青の方眼 —— 指定紙の罫。印刷には出ない色、という含み。 */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background-image: linear-gradient(
-      to right,
-      color-mix(in srgb, var(--aopen) 9%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--aopen) 9%, transparent) 1px,
-      transparent 1px
-    );
-  background-size: 28px 28px;
-  mask-image: radial-gradient(120% 90% at 50% 0%, #000 20%, transparent 80%);
-}
-
-body > * {
-  position: relative;
-  z-index: 1;
 }
 
 img {
@@ -128,22 +78,43 @@ img {
 
 a {
   color: inherit;
+  text-underline-offset: 0.2em;
+  text-decoration-color: var(--rule-strong);
+}
+
+a:hover {
+  text-decoration-color: currentColor;
 }
 
 h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  line-height: 1.28;
-  letter-spacing: 0.01em;
-  text-wrap: balance;
   margin: 0;
+  line-height: 1.42;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(1.8rem, 1.35rem + 2vw, 2.5rem);
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: clamp(1.3rem, 1.15rem + 0.7vw, 1.6rem);
+}
+
+h3 {
+  font-size: 1.08rem;
+}
+
+h4 {
+  font-size: 1rem;
 }
 
 p {
-  margin: 0 0 1.1em;
+  margin: 0 0 1em;
   max-width: var(--measure);
 }
 
@@ -151,14 +122,13 @@ code,
 kbd,
 samp {
   font-family: var(--font-data);
-  font-size: 0.9em;
+  font-size: 0.88em;
   font-feature-settings: normal;
 }
 
 :focus-visible {
-  outline: 2px solid var(--shu-bright);
-  outline-offset: 3px;
-  border-radius: 2px;
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
 }
 
 .wrap {
@@ -170,18 +140,14 @@ samp {
   position: absolute;
   left: -9999px;
   top: 0;
-  background: var(--shu);
+  background: var(--fg);
   color: #fff;
-  padding: 0.6rem 1rem;
+  padding: 0.55rem 1rem;
   z-index: 99;
 }
 .skip:focus {
   left: 1rem;
   top: 1rem;
-}
-
-.nowrap {
-  white-space: nowrap;
 }
 
 .visually-hidden {
@@ -196,582 +162,362 @@ samp {
   border: 0;
 }
 
-/* --- 3. 柱（ヘッダ） ---------------------------------------------------- */
+.nowrap {
+  white-space: nowrap;
+}
+
+/* --- 柱 ----------------------------------------------------------------- */
 .masthead {
   position: sticky;
   top: 0;
   z-index: 30;
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding: 0.7rem var(--gutter);
-  background: color-mix(in srgb, var(--viridian-deep) 92%, transparent);
-  backdrop-filter: saturate(140%) blur(6px);
-  border-bottom: var(--rule);
+  gap: 1rem;
+  padding: 0.55rem var(--gutter);
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.9rem;
 }
 
 .masthead__mark {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
   text-decoration: none;
-  font-family: var(--font-display);
-  font-size: var(--step-0);
-  letter-spacing: 0.02em;
+  font-weight: 700;
   white-space: nowrap;
 }
 
 .masthead__mark img {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
 }
 
 .masthead nav {
   margin-inline-start: auto;
   display: flex;
   align-items: center;
-  gap: clamp(0.75rem, 2vw, 1.6rem);
-  font-size: var(--step--1);
+  gap: clamp(0.7rem, 2vw, 1.4rem);
 }
 
 .masthead nav a {
   text-decoration: none;
-  color: var(--on-viridian-dim);
-  padding-block: 0.35rem;
-  border-bottom: 1px solid transparent;
-  transition: color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--fg-dim);
+  padding-block: 0.3rem;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
 }
 
 .masthead nav a:hover,
 .masthead nav a[aria-current="page"] {
-  color: var(--on-viridian);
-  border-bottom-color: var(--shu-bright);
+  color: var(--fg);
+  border-bottom-color: var(--fg);
 }
 
 @media (max-width: 52rem) {
   .masthead nav a.jump {
     display: none;
   }
-  .masthead__mark {
-    font-size: var(--step--1);
+}
+
+/* 狭い画面では柱の名前を畳んで、行き先だけを残す */
+@media (max-width: 30rem) {
+  .masthead__name {
+    display: none;
   }
 }
 
 .lang {
   display: inline-flex;
-  border: var(--rule);
-  border-radius: 2px;
+  border: 1px solid var(--rule-ui);
+  border-radius: 3px;
   overflow: hidden;
-  font-size: var(--step--1);
 }
 .lang a {
-  padding: 0.2rem 0.55rem;
+  padding: 0.15rem 0.5rem;
   text-decoration: none;
-  color: var(--on-viridian-dim);
-}
-.lang a[aria-current="true"] {
-  background: var(--paper);
-  color: var(--viridian-deep);
-}
-
-/* --- 4. 一面（校正刷り） ------------------------------------------------ */
-.hero {
-  padding-block: clamp(2.5rem, 6vw, 5.5rem) clamp(3rem, 7vw, 6rem);
-}
-
-.hero__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: clamp(1.75rem, 4vw, 3.25rem);
-}
-
-@media (min-width: 62rem) {
-  .hero__grid {
-    grid-template-columns: 5.5rem minmax(0, 1fr);
-    align-items: start;
-  }
-}
-
-/* 縦組みの題字。写植の指定紙の耳に入る書き込みの位置。 */
-.hero__spine {
-  display: none;
-}
-
-@media (min-width: 62rem) {
-  .hero__spine {
-    display: block;
-    writing-mode: vertical-rl;
-    font-family: var(--font-display);
-    font-size: var(--step-1);
-    letter-spacing: 0.32em;
-    color: var(--on-viridian-dim);
-    /* 縦組みでは論理方向が回るので、罫は物理指定で右端に置く */
-    border-right: var(--rule);
-    padding-right: 1.1rem;
-    height: 100%;
-    min-height: 22rem;
-  }
-  .hero__spine b {
-    font-weight: 600;
-    color: var(--on-viridian);
-  }
-}
-
-.hero h1 {
-  font-size: var(--step-4);
-  letter-spacing: -0.015em;
-  margin-bottom: 0.5em;
-}
-
-.hero h1 em {
-  font-style: normal;
-  color: var(--shu-bright);
-}
-
-.hero__lede {
-  font-size: var(--step-1);
-  color: var(--on-viridian-dim);
-  max-width: 30em;
-  line-height: 1.9;
-}
-
-.hero__lede strong {
-  color: var(--on-viridian);
-  font-weight: 600;
-}
-
-/* --- 5. 校正の証拠（mojibake → 正しい表示） ------------------------------ */
-.proof {
-  margin-top: clamp(2rem, 4vw, 3rem);
-  background: var(--paper);
-  color: var(--on-paper);
-  padding: clamp(1.5rem, 3vw, 2.5rem);
-  position: relative;
-  box-shadow: 0 18px 40px -24px rgba(4, 20, 14, 0.85);
-}
-
-/* トンボ（角の見当）。装飾ではなく、この世界の実物。 */
-.proof::before,
-.proof::after,
-.tombo::before,
-.tombo::after {
-  content: "";
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  border-color: var(--shu);
-  border-style: solid;
-  border-width: 0;
-}
-.proof::before {
-  top: -1px;
-  left: -1px;
-  border-top-width: 2px;
-  border-left-width: 2px;
-}
-.proof::after {
-  bottom: -1px;
-  right: -1px;
-  border-bottom-width: 2px;
-  border-right-width: 2px;
-}
-
-.proof__label {
-  font-family: var(--font-data);
-  font-size: var(--step--1);
-  letter-spacing: 0.12em;
-  color: var(--on-paper-dim);
-  margin: 0 0 1.2rem;
-  display: flex;
-  gap: 0.6rem;
-  align-items: baseline;
-  flex-wrap: wrap;
-}
-
-.proof__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.3rem 1rem;
-  padding-block: 0.85rem;
-  border-top: var(--rule-paper);
-}
-
-@media (min-width: 46rem) {
-  .proof__row {
-    grid-template-columns: 11rem minmax(0, 1fr);
-    align-items: baseline;
-  }
-}
-
-.proof__row dt {
-  font-size: var(--step--1);
-  color: var(--on-paper-dim);
-  font-feature-settings: "palt" 1;
-}
-
-.proof__row dd {
-  margin: 0;
-  font-family: var(--font-data);
-  font-size: clamp(0.82rem, 0.7rem + 0.5vw, 1rem);
-  line-height: 1.7;
-  word-break: break-all;
-}
-
-.proof__row--bad dd {
-  color: #8a5b52;
-  justify-self: start;
-  /* 赤字（校正の見え消し）。折り返した行にも必ず乗るよう text-decoration で引く。 */
-  text-decoration-line: line-through;
-  text-decoration-color: var(--shu);
-  text-decoration-thickness: 2px;
-}
-
-.proof__row--good dd {
-  color: var(--on-paper);
-  font-family: var(--font-body);
-  font-size: var(--step-0);
-  font-weight: 600;
-}
-
-.proof__enc {
-  display: inline-block;
-  margin-inline-start: 0.75rem;
-  font-family: var(--font-data);
-  font-size: 0.78em;
-  font-weight: 400;
-  color: var(--aopen-deep);
-  border: 1px solid color-mix(in srgb, var(--aopen-deep) 45%, transparent);
-  border-radius: 2px;
-  padding: 0.05em 0.45em;
-  vertical-align: 0.1em;
+  color: var(--fg-dim);
   white-space: nowrap;
 }
-
-.proof__note {
-  margin: 1.4rem 0 0;
-  font-size: var(--step--1);
-  color: var(--on-paper-dim);
-  max-width: 42em;
-  border-top: var(--rule-paper);
-  padding-top: 1rem;
+.lang a[aria-current="true"] {
+  background: var(--fg);
+  color: var(--bg);
 }
 
-/* --- 6. 行動（ボタン） -------------------------------------------------- */
+/* --- 冒頭 --------------------------------------------------------------- */
+/* 名前・一行・対応 OS・ダウンロード。短く済ませ、すぐ実物へ渡す。 */
+.intro {
+  padding-block: clamp(2.25rem, 5vw, 3.5rem) clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.intro h1 {
+  margin-bottom: 0.45em;
+}
+
+.intro__lede {
+  font-size: clamp(1.02rem, 0.98rem + 0.3vw, 1.2rem);
+  color: var(--fg-dim);
+  max-width: 34em;
+  margin-bottom: 1.35em;
+}
+
+.intro__lede b {
+  color: var(--fg);
+  font-weight: 600;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.85rem 1rem;
   align-items: center;
-  margin-top: clamp(1.75rem, 3vw, 2.5rem);
+  gap: 0.7rem 1rem;
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.75rem 1.5rem;
-  font-family: var(--font-body);
-  font-size: var(--step-0);
+  gap: 0.5rem;
+  padding: 0.55rem 1.15rem;
+  font: inherit;
   font-weight: 600;
   text-decoration: none;
-  border: 1px solid transparent;
-  border-radius: 2px;
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-    color 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid var(--fg);
+  border-radius: 4px;
+  background: var(--fg);
+  color: var(--bg);
+  transition: background-color 0.15s ease-out, color 0.15s ease-out;
 }
 
-.btn--primary {
-  background: var(--shu);
-  color: #fff;
-  box-shadow: 0 10px 24px -14px rgba(212, 56, 31, 0.9);
-}
-.btn--primary:hover {
-  background: var(--shu-ink);
-  transform: translateY(-2px);
+.btn:hover {
+  background: #000;
+  border-color: #000;
 }
 
-.btn--ghost {
-  border-color: color-mix(in srgb, var(--on-viridian) 35%, transparent);
-  color: var(--on-viridian);
-}
-.btn--ghost:hover {
-  background: color-mix(in srgb, var(--on-viridian) 10%, transparent);
-  transform: translateY(-2px);
+.btn--plain {
+  background: transparent;
+  color: var(--fg);
+  border-color: var(--rule-ui);
 }
 
-.actions small {
-  color: var(--on-viridian-dim);
-  font-size: var(--step--1);
+.btn--plain:hover {
+  background: var(--bg-2);
+  border-color: var(--fg);
+  color: var(--fg);
+}
+
+.meta {
+  font-size: 0.86rem;
+  color: var(--fg-faint);
   line-height: 1.6;
 }
 
-/* --- 7. 章 -------------------------------------------------------------- */
+/* --- 実物の帯 ----------------------------------------------------------- */
+/* アプリのウィンドウは暗い帯の上に全幅で置く。ここがこのページの主。 */
+.band {
+  background: var(--band);
+  padding-block: clamp(1.25rem, 3vw, 2.25rem);
+  border-block: 1px solid var(--rule);
+}
+
+.band figure {
+  margin: 0;
+}
+
+.band img {
+  width: 100%;
+  border: 1px solid #2b2f36;
+  border-radius: 3px;
+}
+
+.band figcaption {
+  margin-top: 0.85rem;
+  color: #99a2ac;
+  font-size: 0.86rem;
+  max-width: 62em;
+}
+
+.band figcaption b {
+  color: #e8eaed;
+  font-weight: 600;
+}
+
+.band figcaption a {
+  color: #c3cad2;
+}
+
+/* --- 章 ----------------------------------------------------------------- */
 .section {
-  padding-block: clamp(3.25rem, 8vw, 6.5rem);
-  border-top: var(--rule);
+  padding-block: clamp(2.5rem, 5vw, 4rem);
+  border-top: 1px solid var(--rule);
 }
 
-.section__head {
-  margin-bottom: clamp(1.75rem, 4vw, 3rem);
+.section > .wrap > h2 {
+  margin-bottom: 0.7em;
 }
 
-.section__head h2 {
-  font-size: var(--step-3);
-}
-
-.section__head p {
-  color: var(--on-viridian-dim);
-  margin-top: 0.9rem;
-  font-size: var(--step-1);
+.section__lede {
+  color: var(--fg-dim);
   max-width: 40em;
+  margin-bottom: 1.75rem;
 }
 
-/* --- 8. 三つの形（帯組み。カードの並びにはしない） ----------------------- */
-.shape {
+/* --- Enc 欄の説明 ------------------------------------------------------- */
+.enc {
   display: grid;
-  gap: 1.25rem clamp(1.5rem, 4vw, 3rem);
+  gap: clamp(1.25rem, 3vw, 2.25rem);
   grid-template-columns: minmax(0, 1fr);
-  padding-block: clamp(1.75rem, 4vw, 2.75rem);
-  border-top: 1px solid color-mix(in srgb, var(--aopen) 22%, transparent);
+  align-items: start;
 }
 
-.shape:first-of-type {
+@media (min-width: 58rem) {
+  .enc {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+}
+
+.enc__shot {
+  background: var(--band);
+  padding: 0.5rem;
+  border-radius: 3px;
+}
+
+.enc__shot img {
+  border-radius: 2px;
+}
+
+.enc__aside {
+  margin: 1.1rem 0 0;
+  font-size: 0.94rem;
+  color: var(--fg-dim);
+  max-width: none;
+}
+
+.enc__list {
+  margin: 0;
+  font-size: 0.94rem;
+}
+
+.enc__list dt {
+  font-family: var(--font-data);
+  font-size: 0.83rem;
+  color: var(--fg);
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--rule);
+}
+
+.enc__list dt:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
   border-top: 0;
 }
 
-@media (min-width: 54rem) {
-  .shape {
-    grid-template-columns: 13rem minmax(0, 1fr) 16rem;
-    align-items: start;
-  }
+.enc__list dd {
+  margin: 0.25rem 0 0;
+  color: var(--fg-dim);
+  max-width: 34em;
 }
 
-.shape__name {
-  font-family: var(--font-display);
-  font-size: var(--step-2);
-  line-height: 1.2;
-}
-
-.shape__name span {
-  display: block;
-  font-family: var(--font-data);
-  font-size: var(--step--1);
-  letter-spacing: 0.08em;
-  color: var(--aopen);
-  margin-top: 0.5rem;
-  font-weight: 400;
-}
-
-.shape__body p {
-  margin-bottom: 0.8em;
-}
-
-.shape__body p:last-child {
-  margin-bottom: 0;
-}
-
-.shape__spec {
-  margin: 0;
-  font-size: var(--step--1);
-  color: var(--on-viridian-dim);
-  border-inline-start: 1px solid
-    color-mix(in srgb, var(--aopen) 35%, transparent);
-  padding-inline-start: 1.1rem;
-}
-
-.shape__spec div {
-  display: flex;
-  gap: 0.5rem;
-  padding-block: 0.2rem;
-}
-
-.shape__spec dt {
-  flex: 0 0 5.5em;
-  color: color-mix(in srgb, var(--on-viridian-dim) 80%, var(--aopen));
-}
-
-.shape__spec dd {
-  margin: 0;
-  font-family: var(--font-data);
-  color: var(--on-viridian);
-  overflow-wrap: anywhere;
-}
-
-/* --- 9. 実機の図版 ------------------------------------------------------ */
-.plate {
-  margin: 0 0 clamp(2.5rem, 6vw, 4.5rem);
-}
-
-.plate:last-child {
-  margin-bottom: 0;
-}
-
-.plate__frame {
-  position: relative;
-  background: var(--paper);
-  padding: clamp(0.75rem, 2vw, 1.35rem);
-  box-shadow: 0 22px 48px -30px rgba(3, 18, 12, 0.9);
-}
-
-.plate__frame a {
-  display: block;
-}
-
-.plate__frame img {
-  width: 100%;
-  border: 1px solid var(--paper-3);
-}
-
-/* 原寸を開く合図。図版の下にだけ出す小さな指示。 */
-.plate__full {
-  display: block;
-  width: fit-content;
-  margin-top: 0.6rem;
-  font-size: var(--step--1);
-  color: var(--on-viridian-dim);
-  text-decoration-color: color-mix(in srgb, var(--aopen) 50%, transparent);
-  text-underline-offset: 0.25em;
-}
-
-.plate__full:hover {
-  color: var(--on-viridian);
-}
-
-body.doc .plate__full {
-  color: var(--on-paper-dim);
-}
-
-body.doc .plate__full:hover {
-  color: var(--shu-ink);
-}
-
-.plate__caption {
-  display: grid;
-  gap: 0.35rem 1.25rem;
-  margin-top: 1rem;
-  font-size: var(--step--1);
-  color: var(--on-viridian-dim);
-  max-width: 46em;
-}
-
-.plate__caption b {
-  color: var(--on-viridian);
+/* 重大度の色は意味のあるところだけ */
+.sev {
   font-weight: 600;
-  font-family: var(--font-display);
-  font-size: var(--step-0);
-  letter-spacing: 0.02em;
+}
+.sev--ok {
+  color: var(--sev-ok);
+}
+.sev--warn {
+  color: var(--sev-warn);
+}
+.sev--error {
+  color: var(--sev-error);
+}
+.sev--debug {
+  color: var(--sev-debug);
 }
 
-@media (min-width: 54rem) {
-  .plate--split {
-    display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-    gap: clamp(1.5rem, 3vw, 2.5rem);
-    align-items: center;
-  }
-  .plate--split .plate__caption {
-    margin-top: 0;
-  }
-}
-
-/* --- 10. 表 ------------------------------------------------------------- */
+/* --- 表 ----------------------------------------------------------------- */
 .table-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  border-top: var(--rule);
-  border-bottom: var(--rule);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--step--1);
-  min-width: 38rem;
+  font-size: 0.92rem;
+  min-width: 34rem;
 }
 
 th,
 td {
   text-align: start;
-  padding: 0.75rem 1rem 0.75rem 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--aopen) 18%, transparent);
+  padding: 0.7rem 1.1rem 0.7rem 0;
+  border-bottom: 1px solid var(--rule);
   vertical-align: top;
 }
 
 thead th {
-  font-family: var(--font-display);
-  font-weight: 600;
-  color: var(--on-viridian);
-  letter-spacing: 0.04em;
+  font-weight: 700;
   white-space: nowrap;
+  border-bottom-color: var(--rule-strong);
 }
 
 tbody td {
-  color: var(--on-viridian-dim);
+  color: var(--fg-dim);
 }
 
 tbody td:first-child {
-  color: var(--on-viridian);
+  color: var(--fg);
+  font-weight: 600;
 }
 
 tbody tr:last-child td {
   border-bottom: 0;
 }
 
-td code,
-th code {
-  color: var(--aopen);
-}
-
-/* --- 11. 手順 ----------------------------------------------------------- */
+/* --- 手順 --------------------------------------------------------------- */
 .steps {
   counter-reset: step;
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: clamp(1.5rem, 3vw, 2.25rem);
+  gap: 1.75rem;
 }
 
 .steps > li {
   counter-increment: step;
   display: grid;
-  gap: 0.3rem 1.25rem;
-  grid-template-columns: 3rem minmax(0, 1fr);
+  gap: 0.2rem 0.9rem;
+  grid-template-columns: 1.6rem minmax(0, 1fr);
 }
 
 .steps > li::before {
   content: counter(step);
-  font-family: var(--font-display);
-  font-size: var(--step-3);
-  color: var(--shu-bright);
-  line-height: 1;
-  padding-top: 0.15em;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--fg-faint);
+  line-height: 1.6;
 }
 
 .steps h3 {
-  font-size: var(--step-1);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.35rem;
 }
 
-.steps p {
-  margin-bottom: 0.7em;
-}
-
-/* --- 12. 端末の行 ------------------------------------------------------- */
+/* --- コマンド欄 --------------------------------------------------------- */
 pre {
-  margin: 0 0 1.2rem;
-  padding: 1rem 1.15rem;
-  background: var(--viridian-deep);
-  border: 1px solid color-mix(in srgb, var(--aopen) 25%, transparent);
-  border-radius: 2px;
+  margin: 0 0 1.1rem;
+  padding: 0.85rem 1rem;
+  background: var(--band);
+  color: #e2e6ea;
+  border-radius: 4px;
   overflow-x: auto;
   font-family: var(--font-data);
-  font-size: 0.86rem;
-  line-height: 1.75;
-  color: #d9e7e0;
+  font-size: 0.83rem;
+  line-height: 1.7;
   tab-size: 2;
 }
 
@@ -785,19 +531,19 @@ pre code {
 
 .cmd button {
   position: absolute;
-  top: 0.45rem;
-  inset-inline-end: 0.45rem;
+  top: 0.4rem;
+  inset-inline-end: 0.4rem;
   font: inherit;
+  font-family: var(--font);
   font-size: 0.72rem;
-  font-family: var(--font-body);
-  padding: 0.2rem 0.6rem;
-  color: var(--on-viridian-dim);
-  background: color-mix(in srgb, var(--viridian) 90%, transparent);
-  border: 1px solid color-mix(in srgb, var(--aopen) 30%, transparent);
-  border-radius: 2px;
+  padding: 0.15rem 0.55rem;
+  color: #aab2ba;
+  background: #22262c;
+  border: 1px solid #343a42;
+  border-radius: 3px;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s ease-out, color 0.2s ease-out;
+  transition: opacity 0.15s ease-out, color 0.15s ease-out;
 }
 
 .cmd:hover button,
@@ -806,45 +552,116 @@ pre code {
 }
 
 .cmd button:hover {
-  color: var(--on-viridian);
+  color: #fff;
 }
 
-/* --- 13. 注意書き（朱の傍線ではなく、朱の小口） ------------------------- */
+/* --- 注意書き ----------------------------------------------------------- */
+.notes {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 44rem;
+}
+
+.note h3 {
+  margin-bottom: 0.35rem;
+}
+
+.note p:last-child {
+  margin-bottom: 0;
+}
+
 .caution {
-  /* 緑地では朱を一段明るく取る（濃い朱は地に沈む） */
-  border-top: 2px solid var(--shu-bright);
-  padding-top: 1rem;
-  margin-block: 1.5rem;
+  background: var(--bg-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0.9rem 1.1rem;
+  margin-block: 1.35rem;
 }
 
-.caution h3 {
-  font-size: var(--step-1);
-  margin-bottom: 0.5rem;
+.caution h3,
+.caution h4 {
+  margin-bottom: 0.3rem;
 }
 
 .caution p:last-child {
   margin-bottom: 0;
 }
 
-/* --- 14. 奥付 ----------------------------------------------------------- */
+/* --- 図版（マニュアル本文） --------------------------------------------- */
+.plate {
+  margin: 0 0 1.75rem;
+}
+
+.plate__frame {
+  background: var(--band);
+  padding: 0.5rem;
+  border-radius: 3px;
+}
+
+.plate__frame a {
+  display: block;
+}
+
+.plate__frame img {
+  border-radius: 2px;
+}
+
+.plate__caption {
+  margin-top: 0.65rem;
+  font-size: 0.88rem;
+  color: var(--fg-dim);
+  max-width: var(--measure);
+}
+
+.plate__caption b {
+  color: var(--fg);
+  font-weight: 600;
+  display: block;
+}
+
+.plate__full {
+  display: block;
+  width: fit-content;
+  margin-top: 0.4rem;
+  font-size: 0.84rem;
+  color: var(--fg-faint);
+}
+
+.plate__full:hover {
+  color: var(--fg);
+}
+
+@media (min-width: 54rem) {
+  .plate--split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+  .plate--split .plate__caption {
+    margin-top: 0;
+  }
+}
+
+/* --- 奥付 --------------------------------------------------------------- */
 .colophon {
-  border-top: var(--rule);
-  padding-block: clamp(2.5rem, 5vw, 4rem);
-  font-size: var(--step--1);
-  color: var(--on-viridian-dim);
+  border-top: 1px solid var(--rule);
+  padding-block: clamp(2rem, 4vw, 3rem);
+  font-size: 0.88rem;
+  color: var(--fg-dim);
+  background: var(--bg-2);
 }
 
 .colophon__grid {
   display: grid;
-  gap: 1.75rem clamp(1.5rem, 4vw, 3rem);
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1.5rem clamp(1.5rem, 4vw, 3rem);
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
 }
 
 .colophon h2 {
-  font-size: var(--step-0);
-  letter-spacing: 0.08em;
-  color: var(--on-viridian);
-  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--fg);
+  margin-bottom: 0.6rem;
 }
 
 .colophon ul {
@@ -852,113 +669,62 @@ pre code {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
 
-.colophon a {
-  color: var(--on-viridian-dim);
-  text-decoration-color: color-mix(in srgb, var(--aopen) 50%, transparent);
-  text-underline-offset: 0.25em;
-}
-
-.colophon a:hover {
-  color: var(--on-viridian);
+.colophon p {
+  max-width: none;
 }
 
 .colophon__end {
-  margin-top: 2.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid color-mix(in srgb, var(--aopen) 18%, transparent);
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1.5rem;
+  gap: 0.4rem 1.5rem;
   justify-content: space-between;
+  color: var(--fg-faint);
 }
 
 /* ==========================================================================
-   マニュアル面 —— 同じ世界、読む側の register。
-   地を紙に反転し、罫と見出しを緑に置く（校正刷りではなく、刷り上がり）。
+   マニュアル面
    ========================================================================== */
-body.doc {
-  background: var(--paper);
-  color: var(--on-paper);
-}
-
-body.doc::before {
-  background-image: linear-gradient(
-      to right,
-      color-mix(in srgb, var(--aopen-deep) 10%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--aopen-deep) 10%, transparent) 1px,
-      transparent 1px
-    );
-  mask-image: radial-gradient(140% 70% at 50% 0%, #000 10%, transparent 70%);
-}
-
-body.doc .masthead {
-  background: color-mix(in srgb, var(--paper) 92%, transparent);
-  border-bottom: 1px solid var(--paper-3);
-  color: var(--on-paper);
-}
-
-body.doc .masthead nav a {
-  color: var(--on-paper-dim);
-}
-body.doc .masthead nav a:hover,
-body.doc .masthead nav a[aria-current="page"] {
-  color: var(--on-paper);
-}
-
-body.doc .lang {
-  border-color: var(--paper-3);
-}
-body.doc .lang a {
-  color: var(--on-paper-dim);
-}
-body.doc .lang a[aria-current="true"] {
-  background: var(--viridian);
-  color: var(--paper);
-}
-
 .doc__layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: clamp(2rem, 5vw, 3.5rem);
-  padding-block: clamp(2rem, 5vw, 3.5rem) clamp(3rem, 7vw, 5rem);
+  gap: clamp(1.75rem, 4vw, 3rem);
+  padding-block: clamp(1.75rem, 4vw, 2.75rem) clamp(2.5rem, 5vw, 4rem);
 }
 
 @media (min-width: 62rem) {
   .doc__layout {
-    grid-template-columns: 16rem minmax(0, 1fr);
+    grid-template-columns: 15rem minmax(0, 1fr);
   }
 }
 
-/* 目次 */
 .toc {
-  font-size: var(--step--1);
-  line-height: 1.7;
+  font-size: 0.88rem;
+  line-height: 1.6;
 }
 
 @media (min-width: 62rem) {
   .toc {
     position: sticky;
-    top: 5rem;
+    top: 4.25rem;
     align-self: start;
-    max-height: calc(100vh - 7rem);
+    max-height: calc(100vh - 6rem);
     overflow-y: auto;
-    border-inline-end: 1px solid var(--paper-3);
-    padding-inline-end: 1.25rem;
+    padding-inline-end: 1rem;
+    border-inline-end: 1px solid var(--rule);
   }
 }
 
 .toc h2 {
-  font-size: var(--step-0);
-  letter-spacing: 0.1em;
-  margin-bottom: 0.9rem;
-  color: var(--viridian);
+  font-size: 0.78rem;
+  letter-spacing: 0.09em;
+  color: var(--fg-faint);
+  margin-bottom: 0.7rem;
 }
 
 .toc ol {
@@ -973,83 +739,60 @@ body.doc .lang a[aria-current="true"] {
 }
 
 .toc > ol > li > a::before {
-  content: counter(toc, decimal-leading-zero);
-  font-family: var(--font-data);
-  color: var(--aopen-deep);
-  margin-inline-end: 0.6rem;
-  font-size: 0.85em;
+  content: counter(toc) ".";
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-faint);
+  margin-inline-end: 0.45rem;
 }
 
 .toc a {
   display: block;
-  padding: 0.3rem 0;
-  color: var(--on-paper-dim);
+  padding: 0.22rem 0;
+  color: var(--fg-dim);
   text-decoration: none;
-  border-inline-start: 1px solid transparent;
-  transition: color 0.2s ease-out;
 }
 
 .toc a:hover,
 .toc a.is-current {
-  color: var(--shu-ink);
+  color: var(--fg);
+  font-weight: 600;
 }
 
 .toc ol ol {
-  margin: 0.1rem 0 0.5rem 1.9rem;
-  counter-reset: none;
-}
-
-.toc ol ol li {
-  counter-increment: none;
+  margin: 0.05rem 0 0.45rem 1.35rem;
 }
 
 .toc ol ol a {
   font-size: 0.94em;
-  padding: 0.15rem 0;
+  padding: 0.1rem 0;
 }
 
-/* 本文 */
 .doc__body {
-  max-width: 52rem;
-}
-
-.doc__body .plate {
-  max-width: none;
-}
-
-.doc__body h1 {
-  font-size: var(--step-3);
-  color: var(--viridian);
-  margin-bottom: 0.6em;
+  max-width: 50rem;
 }
 
 .doc__body > p:first-of-type {
-  font-size: var(--step-1);
-  color: var(--on-paper-dim);
+  color: var(--fg-dim);
+  font-size: 1.05rem;
   max-width: 36em;
 }
 
 .doc__body section {
-  padding-top: clamp(2.25rem, 5vw, 3.5rem);
-  margin-top: clamp(2.25rem, 5vw, 3.5rem);
-  border-top: 1px solid var(--paper-3);
+  padding-top: clamp(1.75rem, 4vw, 2.75rem);
+  margin-top: clamp(1.75rem, 4vw, 2.75rem);
+  border-top: 1px solid var(--rule);
 }
 
 .doc__body h2 {
-  font-size: var(--step-2);
-  color: var(--viridian);
   margin-bottom: 0.7em;
 }
 
 .doc__body h3 {
-  font-size: var(--step-1);
-  margin: 2.2em 0 0.6em;
+  margin: 2em 0 0.5em;
 }
 
 .doc__body h4 {
-  font-size: var(--step-0);
-  margin: 1.8em 0 0.5em;
-  color: var(--viridian);
+  margin: 1.6em 0 0.4em;
 }
 
 .doc__body p,
@@ -1059,158 +802,52 @@ body.doc .lang a[aria-current="true"] {
 
 .doc__body ul,
 .doc__body ol {
-  margin: 0 0 1.2em;
-  padding-inline-start: 1.35em;
+  margin: 0 0 1.1em;
+  padding-inline-start: 1.3em;
 }
 
 .doc__body li {
-  margin-bottom: 0.45em;
-}
-
-.doc__body a {
-  color: var(--viridian);
-  text-decoration-color: color-mix(in srgb, var(--viridian) 40%, transparent);
-  text-underline-offset: 0.22em;
-}
-
-.doc__body a:hover {
-  color: var(--shu-ink);
-}
-
-.doc__body pre {
-  background: var(--sumi);
-  border-color: color-mix(in srgb, var(--sumi) 60%, var(--paper-3));
-  color: #dfe6e1;
-}
-
-.doc__body .cmd button {
-  background: color-mix(in srgb, var(--sumi) 85%, transparent);
-  color: #9fb3a9;
-  border-color: color-mix(in srgb, var(--paper) 25%, transparent);
-}
-.doc__body .cmd button:hover {
-  color: #fff;
-}
-
-.doc__body table {
-  min-width: 30rem;
+  margin-bottom: 0.35em;
 }
 
 .doc__body .table-scroll {
-  border-top: 1px solid var(--paper-3);
-  border-bottom: 1px solid var(--paper-3);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.35rem;
 }
 
-.doc__body th,
-.doc__body td {
-  border-bottom-color: var(--paper-3);
-}
-
-.doc__body thead th {
-  color: var(--viridian);
-}
-
-.doc__body tbody td {
-  color: var(--on-paper-dim);
-}
-
-.doc__body tbody td:first-child {
-  color: var(--on-paper);
-}
-
-.doc__body td code,
-.doc__body th code {
-  color: var(--aopen-deep);
-}
-
-.doc__body .caution {
-  border-top-color: var(--shu);
-}
-
-.doc__body .colophon {
-  border-top-color: var(--paper-3);
-  color: var(--on-paper-dim);
+.doc__body .plate {
+  max-width: none;
 }
 
 .lead-in {
-  background: color-mix(in srgb, var(--viridian) 6%, transparent);
-  border-top: 1px solid var(--paper-3);
-  border-bottom: 1px solid var(--paper-3);
-  padding: 1.1rem 1.25rem;
-  margin-bottom: 1.75rem;
+  background: var(--bg-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.5rem;
 }
 
 .lead-in p {
   margin-bottom: 0;
-  font-size: var(--step--1);
+  font-size: 0.92rem;
   max-width: none;
 }
 
-body.doc .colophon {
-  border-top: 1px solid var(--paper-3);
-  color: var(--on-paper-dim);
-}
-
-body.doc .colophon h2 {
-  color: var(--viridian);
-}
-
-body.doc .colophon a {
-  color: var(--on-paper-dim);
-}
-
-body.doc .colophon a:hover {
-  color: var(--shu-ink);
-}
-
-body.doc .colophon__end {
-  border-top-color: var(--paper-3);
-}
-
-/* --- 15. 一度だけの動き ------------------------------------------------- */
-/* 校正が入る瞬間。朱の見え消しが一度だけ引かれ、正しい行が現れる。 */
-@media (prefers-reduced-motion: no-preference) {
-  .proof__row--bad dd {
-    animation: strike 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.7s backwards;
-  }
-
-  .proof__row--good {
-    opacity: 0;
-    animation: settle 0.7s cubic-bezier(0.16, 1, 0.3, 1) 1.15s forwards;
-  }
-
-  @keyframes strike {
-    from {
-      text-decoration-color: transparent;
-    }
-    to {
-      text-decoration-color: var(--shu);
-    }
-  }
-
-  @keyframes settle {
-    from {
-      opacity: 0;
-      filter: blur(6px);
-      transform: translateY(6px);
-    }
-    to {
-      opacity: 1;
-      filter: blur(0);
-      transform: none;
-    }
-  }
-}
-
 @media print {
-  body {
-    background: #fff;
-    color: #000;
-  }
   .masthead,
   .toc,
   .cmd button {
     display: none;
+  }
+  body {
+    background: #fff;
+  }
+  .band,
+  .plate__frame,
+  .enc__shot {
+    background: #fff;
+  }
+  pre {
+    background: #f2f2f0;
+    color: #000;
   }
 }

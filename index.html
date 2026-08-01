@@ -6,7 +6,7 @@
     <title>Veltrea Syslog Server — 日本語が化けない syslog サーバー</title>
     <meta
       name="description"
-      content="受信した 1 通ごとに文字コードを判定して復号する syslog サーバー。Windows / macOS / Linux 対応、インストール不要の単一ファイル。Rust 製・MIT ライセンス。"
+      content="syslog を受信して表示する道具。受信した 1 通ごとに文字コードを判定して復号するので、Shift_JIS と UTF-8 が混在しても日本語が化けません。Windows / macOS / Linux、インストール不要の単一ファイル。Rust 製・MIT ライセンス。"
     />
     <link rel="canonical" href="https://veltrea.github.io/vlt-syslogd/" />
     <link rel="alternate" hreflang="ja" href="https://veltrea.github.io/vlt-syslogd/" />
@@ -23,27 +23,24 @@
   </head>
   <body>
     <!--
-      THESIS: 受信した 1 通ごとに符号化を判定して読む、という仕組みそのものを一面で見せる。
-        開発者向けサイトの定番（黒地＋ネオン緑の擬似ターミナル、あるいは白地の SaaS）は採らない。
-      OWN-WORLD: 原稿用紙の緑を地、版下の紙白を面、校正の朱を指示、非再現青を罫に。
-        見出しは Shippori Mincho のサブセット自前配信、本文は OS の日本語フォント。装飾はトンボと赤字だけ。
-      STORY: 訪問者は「1 通ごとに判定して読む」を数秒で理解し、実機の画面でそれを確かめ、その場で入手する。
-      FIRST VIEWPORT: 左に縦組みの題字帯。右に見出しと導入。直下に紙面パネル
-        （届いたバイト列 → 素朴な受信側の文字化け → vlt-syslogd の表示）。朱の一次ボタンは紙面のすぐ下。
-      FORM: 組版指定紙・校正刷り（自分の 7 候補中 7 位）／ seed 6c7700a0
-      FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+      この面は「分野の定番を、丁寧にやる」方針で組んである。
+      同種の無料ツール（Visual Syslog Server / lnav / klogg）はどれも、
+      アプリのウィンドウを実寸で真ん中に置き、それ以外に何もしていない。
+      演出しているのは席数を売っている側だけなので、そこには寄せない。
+      したがって: 装飾なし。独自書体なし。色は重大度と状態にだけ使う。
+      画面の最初の 1/4 で「何か・対応 OS・入手」を済ませ、すぐ実物の画面に渡す。
     -->
     <a class="skip" href="#main">本文へ移動</a>
 
     <header class="masthead">
       <a class="masthead__mark" href="./">
-        <img src="assets/icon-256.png" alt="" width="26" height="26" />
-        Veltrea Syslog Server
+        <img src="assets/icon-256.png" alt="" width="22" height="22" />
+        <span class="masthead__name">Veltrea Syslog Server</span>
       </a>
       <nav aria-label="サイト内">
+        <a class="jump" href="#encoding">文字コード</a>
         <a class="jump" href="#shapes">三つの形</a>
-        <a class="jump" href="#plates">画面</a>
-        <a class="jump" href="#download">入手</a>
+        <a class="jump" href="#install">導入</a>
         <a href="manual.html">マニュアル</a>
         <a href="https://github.com/veltrea/vlt-syslogd">GitHub</a>
         <span class="lang">
@@ -54,334 +51,186 @@
     </header>
 
     <main id="main">
-      <!-- ===== 一面 ===== -->
-      <section class="hero">
-        <div class="wrap hero__grid">
-          <p class="hero__spine"><b>Veltrea Syslog Server</b>　v0.4.0</p>
-
-          <div>
-            <h1>syslog の<span class="nowrap">日本語</span>が、<em class="nowrap">化けない</em>。</h1>
-            <p class="hero__lede">
-              受信した <strong>1 通ごと</strong>に文字コードを判定して復号し、
-              <strong>どの符号化で読んだか</strong>を画面に出す syslog サーバーです。
-              インストール不要の単一ファイル。ネットワークにも管理者権限にも依存しません。
-            </p>
-
-            <!-- 校正刷り：主張ではなく、実物の突き合わせ -->
-            <div class="proof tombo">
-              <p class="proof__label">
-                <span>受信例</span>
-                <span>UDP 514</span>
-                <span>RFC 3164 形式・本文は UTF-8</span>
-              </p>
-
-              <dl>
-                <div class="proof__row">
-                  <dt>届いたバイト列</dt>
-                  <dd>
-                    3c 31 33 32 3e 61 75 74 68 3a 20 <b>e8 aa 8d e8 a8 bc e3 81
-                    ab e5 a4 b1 e6 95 97 e3 81 97 e3 81 be e3 81 97 e3 81 9f</b>
-                    3a 20 …
-                  </dd>
-                </div>
-
-                <div class="proof__row proof__row--bad">
-                  <dt>符号化を1つに決め打ちした受信側</dt>
-                  <dd>&lt;132&gt;auth: 隱崎ｨｼ縺ｫ螟ｱ謨励＠縺ｾ縺励◆: 繝ｦ繝ｼ繧ｶ繝ｼ admin</dd>
-                </div>
-
-                <div class="proof__row proof__row--good">
-                  <dt>vlt-syslogd の表示</dt>
-                  <dd>
-                    認証に失敗しました: ユーザー admin (3 回目)<span
-                      class="proof__enc"
-                      >Enc: UTF-8</span
-                    >
-                  </dd>
-                </div>
-              </dl>
-
-              <p class="proof__note">
-                判定は通信全体ではなく 1 通ごとに行います。同じ port に
-                Shift_JIS の機器と UTF-8 の機器が混ざっていても、
-                どちらもそのまま読めます。判定に使った符号化は画面の
-                <b>Enc</b> 欄に出るので、表示を信じてよいかどうかを利用者が確かめられます。
-              </p>
-            </div>
-
-            <div class="actions">
-              <a
-                class="btn btn--primary"
-                href="https://github.com/veltrea/vlt-syslogd/releases/latest"
-                >v0.4.0 を入手する</a
-              >
-              <a class="btn btn--ghost" href="manual.html">マニュアルを読む</a>
-              <small>
-                MIT ライセンス・Rust 製<br />
-                Windows / macOS / Linux（x86_64）
-              </small>
-            </div>
+      <!-- 冒頭。名前・一行・入手だけ。 -->
+      <section class="intro">
+        <div class="wrap">
+          <h1>Veltrea Syslog Server</h1>
+          <p class="intro__lede">
+            syslog を受信して表示するだけの道具です。受信した
+            <b>1 通ごと</b>に文字コードを判定して復号するので、Shift_JIS の機器と
+            UTF-8 の機器が同じポートに混ざっていても日本語が化けません。
+            インストール不要の単一ファイル。
+          </p>
+          <div class="actions">
+            <a
+              class="btn"
+              href="https://github.com/veltrea/vlt-syslogd/releases/latest"
+              >v0.4.0 をダウンロード</a
+            >
+            <a class="btn btn--plain" href="manual.html">マニュアル</a>
+            <span class="meta">
+              Windows / macOS / Linux (x86_64)<br />
+              Rust 製・MIT ライセンス
+            </span>
           </div>
         </div>
       </section>
 
-      <!-- ===== 判定の根拠 ===== -->
+      <!-- 実物。ここがこのページの主。 -->
+      <div class="band">
+        <div class="wrap">
+          <figure>
+            <a href="assets/portable-main.png" target="_blank" rel="noopener">
+              <img
+                src="assets/portable-main.png"
+                width="1698"
+                height="989"
+                alt="Portable 版のログ画面。Time・Tag・Severity・Enc・Message の 5 列に、UTF-8 と Shift_JIS の日本語メッセージが混在して正しく表示されている。"
+              />
+            </a>
+            <figcaption>
+              <b>Portable 版のログ画面。</b>
+              UTF-8 と Shift_JIS の syslog を同時に受けているところ。v0.4.0 の
+              Windows 版配布バイナリを Windows 11 で動かして撮影しています。
+              <a href="assets/portable-main.png" target="_blank" rel="noopener"
+                >原寸で開く</a
+              >
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <!-- 他と違う唯一の点 -->
       <section class="section" id="encoding">
         <div class="wrap">
-          <div class="section__head">
-            <h2>何を根拠に、その文字コードだと決めたのか</h2>
-            <p>
-              推測だけに頼りません。送信側が符号化を宣言していればそれを最優先し、
-              宣言がなければ BOM を見て、それも無ければバイト列から判定します。
-              どの段で決まったかは <b>Enc</b> 欄の表記でそのまま分かります。
-            </p>
+          <h2>文字コードは 1 通ごとに決める</h2>
+          <p class="section__lede">
+            通信全体で 1 つの文字コードを決め打ちするのではなく、届いた
+            1 通ずつを別々に判定します。判定に使った根拠は
+            <b>Enc</b> 欄にそのまま出るので、表示を信じてよいかどうかを
+            利用者の側で確かめられます。
+          </p>
+
+          <div class="enc">
+            <div>
+              <div class="enc__shot">
+                <img
+                src="assets/enc-column.png"
+                width="1180"
+                height="421"
+                alt="ログ画面の Severity・Enc・Message 列の拡大。Enc 欄に UTF-8、Shift_JIS、UTF-8 (MSG-SD/BOM-Missing) などが行ごとに異なって表示されている。"
+                />
+              </div>
+              <p class="enc__aside">
+                重大度も色で分けています（<span class="sev sev--ok">Notice</span> ・
+                <span class="sev sev--warn">Warning</span> ・
+                <span class="sev sev--error">Error</span> ・
+                <span class="sev sev--debug">Debug</span>）。元のバイト列は捨てずに
+                持っているので、行を右クリックして <b>Copy as Hex</b>
+                で取り出せます。表示がおかしいと思ったとき、送信側とこちらの
+                どちらの問題かを切り分けられます。
+              </p>
+            </div>
+
+            <dl class="enc__list">
+              <dt>UTF-8 ／ Shift_JIS</dt>
+              <dd>
+                RFC 3164 などで届いたものを、バイト列から判定して復号した。
+              </dd>
+
+              <dt>Shift_JIS (MSG-SD/BOM-Missing)</dt>
+              <dd>
+                RFC 5424 の構造化データが <code>charset="Shift_JIS"</code>
+                と宣言していたので、それに従った。BOM は付いていなかった。
+              </dd>
+
+              <dt>UTF-8 (MSG-UTF8/BOM)</dt>
+              <dd>宣言は無かったが BOM があったので UTF-8 として読んだ。</dd>
+
+              <dt>UTF-8 (Implicit)</dt>
+              <dd>
+                宣言も BOM も無く、UTF-8 として妥当だったのでそう解釈した。
+              </dd>
+
+              <dt>Shift_JIS (Guess)</dt>
+              <dd>手掛かりが無く、バイト列から推定した。ここだけは推測。</dd>
+            </dl>
           </div>
+
+        </div>
+      </section>
+
+      <!-- 三つの形 -->
+      <section class="section" id="shapes">
+        <div class="wrap">
+          <h2>三つの形</h2>
+          <p class="section__lede">
+            syslog を読む部分は同じ実装で、動かし方だけが違います。
+            迷ったら Portable から。
+          </p>
 
           <div class="table-scroll">
             <table>
-              <caption class="visually-hidden">
-                受信形式ごとの符号化の決め方と Enc 欄の表示
-              </caption>
               <thead>
                 <tr>
-                  <th scope="col">届いた形</th>
-                  <th scope="col">決め方</th>
-                  <th scope="col">Enc 欄の表示</th>
+                  <th scope="col">形</th>
+                  <th scope="col">何をするもの</th>
+                  <th scope="col">待ち受け</th>
+                  <th scope="col">常駐</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
+                  <td>Portable</td>
                   <td>
-                    RFC 5424 ＋ 構造化データに
-                    <code>charset="Shift_JIS"</code>
+                    自分で UDP を待ち受ける単体の GUI。ダブルクリックで起動し、
+                    その場で受信が始まる。インストール不要。
                   </td>
-                  <td>
-                    宣言をそのまま信じる。BOM は「付いていれば外す」程度の寛容な扱い。
-                  </td>
-                  <td><code>Shift_JIS (MSG-SD/BOM-Missing)</code></td>
+                  <td><code>514/udp</code></td>
+                  <td>しない</td>
                 </tr>
                 <tr>
-                  <td>RFC 5424 ＋ 宣言なし・BOM あり</td>
-                  <td>BOM を根拠に UTF-8 として読む。</td>
-                  <td><code>UTF-8 (MSG-UTF8/BOM)</code></td>
+                  <td>Server</td>
+                  <td>
+                    画面を持たない常駐エンジン。Windows サービス / launchd /
+                    systemd として OS 起動時から受信する。
+                  </td>
+                  <td>
+                    <code>514/udp</code><br /><code>5141/tcp</code><br /><code
+                      >5142/tcp</code
+                    >
+                  </td>
+                  <td>する</td>
                 </tr>
                 <tr>
-                  <td>RFC 5424 ＋ 宣言も BOM も無し</td>
+                  <td>Console</td>
                   <td>
-                    UTF-8 として妥当なら UTF-8。妥当でなければバイト列から推定する。
+                    常駐している Server に TCP で繋いで見る GUI。閉じても受信は
+                    止まらない。サービスの開始・停止もここから。
                   </td>
-                  <td>
-                    <code>UTF-8 (Implicit)</code> ／ <code>Shift_JIS (Guess)</code>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    RFC 3164（<code>&lt;PRI&gt;Aug 01 19:37:14 host tag: …</code>）
-                  </td>
-                  <td>本文のバイト列から符号化を推定する。</td>
-                  <td><code>UTF-8</code> ／ <code>Shift_JIS</code></td>
-                </tr>
-                <tr>
-                  <td>
-                    素の BSD 形式（<code>&lt;PRI&gt;tag: …</code>、日時もホスト名も無し）
-                  </td>
-                  <td>
-                    そのまま受け取り、コロンの前をタグとして取り出す。
-                  </td>
-                  <td><code>UTF-8</code> ／ <code>Shift_JIS</code></td>
+                  <td>—</td>
+                  <td>しない</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <p style="margin-top: 1.5rem">
-            機器の実装が規格どおりでないことは珍しくありません。だから
-            <b>受け取れる形を広く、決め方を明示する</b>という方針をとっています。
-            元のバイト列は捨てずに保持しているので、行を右クリックして
-            <b>Copy as Hex</b> で取り出せます。
+            配信 (5141) と制御 (5142) は既定でループバック限定、かつ共有トークンで
+            保護されています。詳しくは<a href="manual.html#network"
+              >マニュアルのネットワークの節</a
+            >へ。
           </p>
         </div>
       </section>
 
-      <!-- ===== 三つの形 ===== -->
-      <section class="section" id="shapes">
+      <!-- 入手して動かす -->
+      <section class="section" id="install">
         <div class="wrap">
-          <div class="section__head">
-            <h2>同じエンジンを、三つの形で</h2>
-            <p>
-              使い方が違うだけで、syslog を読む部分は同じ実装です。
-              迷ったら Portable から始めてください。
-            </p>
-          </div>
-
-          <div class="shape">
-            <h3 class="shape__name">
-              Portable
-              <span>vlt-syslogd-portable</span>
-            </h3>
-            <div class="shape__body">
-              <p>
-                自分で UDP を待ち受ける単体の GUI。ダブルクリックで起動し、
-                その場で受信が始まります。インストールもサービス登録も、
-                インターネットも要りません。
-              </p>
-              <p>
-                現場に持ち込むノート PC、客先の借り物の端末、
-                「いま 10 分だけログを見たい」という場面のための形です。
-              </p>
-            </div>
-            <dl class="shape__spec">
-              <div><dt>要る権限</dt><dd>なし（Windows）</dd></div>
-              <div><dt>待ち受け</dt><dd>514/udp</dd></div>
-              <div><dt>常駐</dt><dd>しない</dd></div>
-            </dl>
-          </div>
-
-          <div class="shape">
-            <h3 class="shape__name">
-              Server
-              <span>vlt-syslogd-srv</span>
-            </h3>
-            <div class="shape__body">
-              <p>
-                画面を持たない常駐エンジン。Windows サービス / launchd /
-                systemd として登録し、OS の起動と同時に受信を始めます。
-                受け取ったログはファイルへ書き出し、Console へ配信します。
-              </p>
-              <p>
-                24 時間受け続ける必要がある、サーバールーム側の形です。
-              </p>
-            </div>
-            <dl class="shape__spec">
-              <div><dt>要る権限</dt><dd>導入時のみ管理者</dd></div>
-              <div><dt>待ち受け</dt><dd>514/udp・5141/tcp・5142/tcp</dd></div>
-              <div><dt>常駐</dt><dd>する</dd></div>
-            </dl>
-          </div>
-
-          <div class="shape">
-            <h3 class="shape__name">
-              Console
-              <span>vlt-syslogd-console</span>
-            </h3>
-            <div class="shape__body">
-              <p>
-                常駐している Server に TCP で繋いで見るための GUI。
-                見たいときだけ起動し、閉じても受信は止まりません。
-                サービスの開始・停止・設定の適用も、この画面から行えます。
-              </p>
-              <p>
-                配信 (5141) と制御 (5142) は既定でループバック限定、
-                かつ共有トークンで保護されています。
-              </p>
-            </div>
-            <dl class="shape__spec">
-              <div><dt>要る権限</dt><dd>なし（操作時のみ UAC）</dd></div>
-              <div><dt>接続先</dt><dd>127.0.0.1:5141 / 5142</dd></div>
-              <div><dt>常駐</dt><dd>しない</dd></div>
-            </dl>
-          </div>
-        </div>
-      </section>
-
-      <!-- ===== 実機の画面 ===== -->
-      <section class="section" id="plates">
-        <div class="wrap">
-          <div class="section__head">
-            <h2>実機の画面</h2>
-            <p>
-              いずれも v0.4.0 の Windows 版配布バイナリを Windows 11 上で動かし、
-              UTF-8 と Shift_JIS を混ぜた syslog を流して撮影したものです。
-            </p>
-          </div>
-
-          <figure class="plate">
-            <div class="plate__frame">
-              <a href="assets/portable-main.png" target="_blank" rel="noopener">
-                <img
-                  src="assets/portable-main.png"
-                  width="1698"
-                  height="989"
-                  alt="Portable 版のログ一覧。Time・Tag・Severity・Enc・Message の 5 列に、UTF-8 と Shift_JIS の日本語メッセージが混在して正しく表示されている。"
-                />
-              </a>
-            </div>
-            <figcaption class="plate__caption">
-              <b>Portable — ログ一覧</b>
-              <span>
-                Enc 欄を見ると、同じ画面に <code>UTF-8</code>・<code>Shift_JIS</code>・<code
-                  >Shift_JIS (MSG-SD/BOM-Missing)</code
-                >
-                が混ざっています。すべて別々の送信元・別々の形式で届いたものです。
-                重大度は色でも区別され、Critical と Alert は朱で立ち上がります。
-                <a class="plate__full" href="assets/portable-main.png" target="_blank" rel="noopener"
-                  >原寸で開く</a
-                >
-              </span>
-            </figcaption>
-          </figure>
-
-          <div class="plate plate--split">
-            <div class="plate__frame">
-              <a href="assets/portable-prefs.png" target="_blank" rel="noopener">
-                <img
-                  src="assets/portable-prefs-detail.png"
-                  width="760"
-                  height="215"
-                  alt="環境設定ダイアログ。待ち受けポート 514 と、ログ保存先のパスが並んでいる。"
-                />
-              </a>
-            </div>
-            <div class="plate__caption">
-              <b>環境設定</b>
-              <span>
-                待ち受けポートとログの保存先だけの、二項目の設定です。
-                514 が既に使われている環境では、ここで別のポートに変えられます。
-                起動時の bind の成否は、ログ一覧の 1 行目にそのまま出ます。
-                <a class="plate__full" href="assets/portable-prefs.png" target="_blank" rel="noopener"
-                  >全体を開く</a
-                >
-              </span>
-            </div>
-          </div>
-
-          <figure class="plate">
-            <div class="plate__frame">
-              <a href="assets/console-main.png" target="_blank" rel="noopener">
-                <img
-                  src="assets/console-main.png"
-                  width="1698"
-                  height="989"
-                  alt="Console が Server に接続している画面。上部に緑の「受信中 (127.0.0.1:5141)」表示と、サービスの開始・停止・再起動ボタンが並ぶ。"
-                />
-              </a>
-            </div>
-            <figcaption class="plate__caption">
-              <b>Console — 常駐 Server に接続中</b>
-              <span>
-                緑の「● 受信中」は配信チャネルが繋がっている状態です。
-                サービスの開始 / 停止 / 再起動もここから行えます
-                （この画面はサービス登録せずエンジンを直接起動しているため、
-                サービス状態は「未インストール」と出ています）。
-                <a class="plate__full" href="assets/console-main.png" target="_blank" rel="noopener"
-                  >原寸で開く</a
-                >
-              </span>
-            </figcaption>
-          </figure>
-        </div>
-      </section>
-
-      <!-- ===== 入手と導入 ===== -->
-      <section class="section" id="download">
-        <div class="wrap">
-          <div class="section__head">
-            <h2>入手する</h2>
-            <p>
-              最新は <b>v0.4.0</b>。用途に合うものだけを落としてください。
-              すべて GitHub Releases に置いてあります。
-            </p>
-          </div>
+          <h2>入手して動かす</h2>
+          <p class="section__lede">
+            最新は v0.4.0。用途に合うものだけ落としてください。
+          </p>
 
           <div class="table-scroll">
             <table>
@@ -410,8 +259,7 @@
                     <a
                       href="https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-srv-windows-v0.4.0.zip"
                       ><code>vlt-syslogd-srv-windows-v0.4.0.zip</code></a
-                    >
-                    ／
+                    ><br />
                     <a
                       href="https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-console-windows-v0.4.0.zip"
                       ><code>vlt-syslogd-console-windows-v0.4.0.zip</code></a
@@ -430,7 +278,7 @@
                 </tr>
                 <tr>
                   <td>macOS</td>
-                  <td>App（データは Application Support）</td>
+                  <td>App</td>
                   <td>
                     <a
                       href="https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-macos-app-v0.4.0.dmg"
@@ -440,7 +288,7 @@
                 </tr>
                 <tr>
                   <td>Linux</td>
-                  <td>Portable（x86_64・単一 ELF）</td>
+                  <td>Portable（単一 ELF）</td>
                   <td>
                     <a
                       href="https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-linux-x86_64-portable-v0.4.0"
@@ -452,39 +300,38 @@
             </table>
           </div>
 
-          <h3 style="margin-top: 2.5rem; font-size: var(--step-2)">
-            動かすまで、三手
-          </h3>
-          <ol class="steps" style="margin-top: 1.5rem">
+          <ol class="steps" style="margin-top: 2.25rem">
             <li>
               <div>
                 <h3>展開して起動する</h3>
-                <p>
-                  Portable はインストール不要です。zip を展開して
+                <p style="margin-bottom: 0">
+                  Portable はインストール不要です。展開して
                   <code>vlt-syslogd-portable.exe</code> をダブルクリック。
-                  SmartScreen が出たら「詳細情報」→「実行」を選びます。
+                  SmartScreen が出たら「詳細情報」→「実行」。
                 </p>
               </div>
             </li>
             <li>
               <div>
                 <h3>1 行目で待ち受けを確かめる</h3>
-                <p>
-                  ログ一覧の先頭に <code>Listening on 0.0.0.0:514 (UDP)</code>
-                  と出れば待ち受け成功です。失敗していればその旨が出るので、
-                  環境設定でポートを変えてください。
+                <p style="margin-bottom: 0">
+                  <code>Listening on 0.0.0.0:514 (UDP)</code>
+                  と出れば成功です。失敗していればその旨が出るので、環境設定で
+                  1024 番以上のポートに変えます。
                 </p>
               </div>
             </li>
             <li>
               <div>
                 <h3>試しに 1 通投げる</h3>
-                <p>PowerShell から自分宛てに送って、行が増えれば完了です。</p>
-                <pre class="cmd"><code>$u = New-Object System.Net.Sockets.UdpClient
+                <p>行が増えれば完了です。</p>
+                <pre
+                  class="cmd"
+                ><code>$u = New-Object System.Net.Sockets.UdpClient
 $b = [Text.Encoding]::UTF8.GetBytes('&lt;132&gt;auth: 認証に失敗しました')
 $u.Send($b, $b.Length, '127.0.0.1', 514) | Out-Null; $u.Close()</code></pre>
                 <p style="margin-bottom: 0">
-                  常駐させたい、別の機器から受けたい、といった先の手順は
+                  常駐させたい、別の機器から受けたい、という先は
                   <a href="manual.html">マニュアル</a>にあります。
                 </p>
               </div>
@@ -493,49 +340,38 @@ $u.Send($b, $b.Length, '127.0.0.1', 514) | Out-Null; $u.Close()</code></pre>
         </div>
       </section>
 
-      <!-- ===== 正直な制限 ===== -->
+      <!-- 正直な制限 -->
       <section class="section" id="limits">
         <div class="wrap">
-          <div class="section__head">
-            <h2>先に言っておくこと</h2>
-            <p>
-              使い始めてから詰まりやすいのは、たいていこの三つです。
-            </p>
-          </div>
-
-          <div style="display: grid; gap: 2rem; max-width: 44rem">
-            <div class="caution">
+          <h2>先に言っておくこと</h2>
+          <div class="notes">
+            <div class="note">
               <h3>macOS / Linux の 514 番は特権ポート</h3>
               <p>
                 0〜1023 番は root でないと bind できません。macOS（Mojave 以降）は
                 <code>0.0.0.0:514</code> なら root 不要ですが、
-                <code>127.0.0.1:514</code> のように特定のインターフェースを指定すると
-                root が要ります。Linux では root か
+                <code>127.0.0.1:514</code> のように特定のインターフェースを
+                指定すると root が要ります。Linux では root か
                 <code>CAP_NET_BIND_SERVICE</code> が必要です。
-                避けたい場合は 1024 番以上に変えてください。
+                1024 番以上に変えれば済む話でもあります。
               </p>
             </div>
-
-            <div class="caution">
+            <div class="note">
               <h3>macOS 版は ad-hoc 署名（公証なし）</h3>
               <p>
-                Apple Developer 登録をしていないため、ダウンロード後の初回起動で
-                Gatekeeper に止められます。右クリック →「開く」を一度行うか、
-                <code>xattr -dr com.apple.quarantine</code>
-                で隔離属性を外してください。Portable 版はデータを
-                <code>.app</code> の隣に置く都合上、隔離属性が残っていると
-                App Translocation でその置き場所が壊れます。
+                Apple Developer 登録をしていないため、初回起動で Gatekeeper に
+                止められます。右クリック →「開く」を一度行うか、
+                <code>xattr -dr com.apple.quarantine</code> で隔離属性を
+                外してください。
               </p>
             </div>
-
-            <div class="caution">
+            <div class="note">
               <h3>「サービス稼働中」は「ポート到達可能」ではない</h3>
               <p>
-                Server がサービスとして動いていても、ファイアウォールが UDP 514 を
-                塞いでいればリモート機器のログは 1 通も届きません。
-                受信できないときは、<code>bind_addr</code> が
-                <code>127.0.0.1</code> になっていないか、ファイアウォールが開いているか、
-                送信側が正しい IP を向いているかを順に確かめてください。
+                Server が動いていても、ファイアウォールが UDP 514 を塞いでいれば
+                リモート機器のログは 1 通も届きません。受信できないときは
+                <code>bind_addr</code>、ファイアウォール、送信側の宛先 IP の順に
+                確かめてください。
               </p>
             </div>
           </div>
@@ -586,19 +422,16 @@ $u.Send($b, $b.Length, '127.0.0.1', 514) | Out-Null; $u.Close()</code></pre>
           </div>
           <div>
             <h2>この道具について</h2>
-            <p style="max-width: none">
+            <p>
               既存の軽量 Windows syslog サーバーの日本語表示の限界を越えるために、
               Rust でゼロから書きました。作者は veltrea。
-              MIT ライセンスで公開しています。
             </p>
           </div>
         </div>
 
         <div class="colophon__end">
           <span>© 2026 veltrea — MIT License</span>
-          <span>
-            見出し書体 Shippori Mincho（SIL Open Font License 1.1）
-          </span>
+          <span>v0.4.0 対応</span>
         </div>
       </div>
     </footer>
