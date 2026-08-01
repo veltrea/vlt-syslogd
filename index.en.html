@@ -12,6 +12,7 @@
     <link rel="alternate" hreflang="ja" href="https://veltrea.github.io/vlt-syslogd/" />
     <link rel="alternate" hreflang="en" href="https://veltrea.github.io/vlt-syslogd/index.en.html" />
     <link rel="icon" href="assets/icon-256.png" type="image/png" />
+    <link rel="preload" as="font" type="font/woff2" href="assets/fonts/chakra-subset.woff2" crossorigin />
     <link rel="stylesheet" href="styles.css" />
     <meta property="og:title" content="Veltrea Syslog Server" />
     <meta
@@ -23,24 +24,24 @@
   </head>
   <body>
     <!--
-      This page runs the category convention, done carefully.
-      The free tools in this space (Visual Syslog Server, lnav, klogg) all put the
-      application window itself in the middle at readable size and do nothing else.
-      The ones with the production values are selling seats; we are not.
-      So: no decoration, no custom display face, colour only where it means severity
-      or state. The first quarter of the viewport answers what/which OS/where to get
-      it, then hands straight over to the real window.
+      World: a ground-station telemetry console. This product receives streams from
+      remote devices, so the page speaks the language of a control desk.
+      The lead is not a screenshot but a live log: an HTML console where the same demo
+      feed used for the real captures arrives one line at a time.
+      Only meaningful things glow (severity, state, receive count).
+      Under prefers-reduced-motion everything stops and the finished state is shown.
     -->
     <a class="skip" href="#main">Skip to content</a>
 
     <header class="masthead">
       <a class="masthead__mark" href="index.en.html">
         <img src="assets/icon-256.png" alt="" width="22" height="22" />
-        <span class="masthead__name">Veltrea Syslog Server</span>
+        <span class="masthead__name">VLT-SYSLOGD</span>
       </a>
       <nav aria-label="Site">
-        <a class="jump" href="#encoding">Encoding</a>
-        <a class="jump" href="#shapes">Three shapes</a>
+        <a class="jump" href="#decode">Decode</a>
+        <a class="jump" href="#units">Shapes</a>
+        <a class="jump" href="#plates">Screens</a>
         <a class="jump" href="#install">Install</a>
         <a href="manual.en.html">Manual</a>
         <a href="https://github.com/veltrea/vlt-syslogd">GitHub</a>
@@ -52,82 +53,101 @@
     </header>
 
     <main id="main">
-      <section class="intro">
+      <section class="console">
+        <div class="wrap console__grid">
+          <div class="boot">
+            <p class="readout">Veltrea Syslog Server / v0.4.0</p>
+            <h1>Syslog that doesn't <em class="nowrap">mangle</em> your text.</h1>
+            <p class="console__lede">
+              The character encoding is decided <b>per message</b>, so a
+              Shift_JIS appliance and a UTF-8 appliance can share one port and
+              both stay readable. Single file, no installer.
+            </p>
+            <div class="actions">
+              <a
+                class="btn"
+                href="https://github.com/veltrea/vlt-syslogd/releases/latest"
+                >Download v0.4.0</a
+              >
+              <a class="btn btn--plain" href="manual.en.html">Manual</a>
+              <span class="meta">
+                Windows / macOS / Linux (x86_64)<br />
+                Written in Rust, MIT License
+              </span>
+            </div>
+          </div>
+
+          <div class="hud" data-stream>
+            <div class="hud__bar">
+              <span class="led">RECEIVING</span>
+              <span class="readout">0.0.0.0:514 / UDP</span>
+              <span class="readout" style="margin-inline-start: auto"
+                >RX <span data-count>0000</span></span
+              >
+            </div>
+            <div class="hud__body stream">
+              <div class="stream__head" aria-hidden="true">
+                <span>Time</span><span>Tag</span><span>Enc</span
+                ><span>Message</span>
+              </div>
+              <div
+                class="stream__rows"
+                role="log"
+                aria-live="off"
+                aria-label="Live syslog demonstration"
+              ></div>
+            </div>
+          </div>
+        </div>
+
         <div class="wrap">
-          <h1>Veltrea Syslog Server</h1>
-          <p class="intro__lede">
-            A tool that receives syslog and shows it. It decides the character
-            encoding <b>per message</b>, so a Shift_JIS appliance and a UTF-8
-            appliance can share one port and both stay readable. Single file, no
-            installer.
-          </p>
-          <div class="actions">
-            <a
-              class="btn"
-              href="https://github.com/veltrea/vlt-syslogd/releases/latest"
-              >Download v0.4.0</a
-            >
-            <a class="btn btn--plain" href="manual.en.html">Manual</a>
-            <span class="meta">
-              Windows / macOS / Linux (x86_64)<br />
-              Written in Rust, MIT licensed
-            </span>
+          <div class="gauges">
+            <div class="gauge">
+              <b>1</b><span class="readout">decision per message</span>
+            </div>
+            <div class="gauge">
+              <b>5</b><span class="readout">ways it decides</span>
+            </div>
+            <div class="gauge"><b>8</b><span class="readout">severities</span></div>
+            <div class="gauge"><b>3</b><span class="readout">shapes</span></div>
+            <div class="gauge"><b>0</b><span class="readout">installers</span></div>
           </div>
         </div>
       </section>
 
-      <div class="band">
+      <section class="section" id="decode">
         <div class="wrap">
-          <figure>
-            <a href="assets/portable-main.png" target="_blank" rel="noopener">
-              <img
-                src="assets/portable-main.png"
-                width="1698"
-                height="989"
-                alt="The Portable log view: five columns — Time, Tag, Severity, Enc, Message — showing UTF-8 and Shift_JIS Japanese messages rendered correctly side by side."
-              />
-            </a>
-            <figcaption>
-              <b>The Portable log view.</b>
-              Receiving UTF-8 and Shift_JIS syslog at the same time. Captured
-              from the v0.4.0 Windows release binary running on Windows 11.
-              <a href="assets/portable-main.png" target="_blank" rel="noopener"
-                >Open full size</a
-              >
-            </figcaption>
-          </figure>
-        </div>
-      </div>
+          <div class="section__head">
+            <h2>Decoded one at a time, with the evidence shown</h2>
+            <p class="section__lede">
+              Nothing locks the whole stream to one encoding. The evidence it
+              settled on appears in the <b>Enc</b> column, so you can decide
+              whether to trust what you are reading.
+            </p>
+          </div>
 
-      <section class="section" id="encoding">
-        <div class="wrap">
-          <h2>The encoding is decided per message</h2>
-          <p class="section__lede">
-            Rather than locking the whole stream to one encoding, each datagram
-            is judged on its own. The evidence it settled on appears in the
-            <b>Enc</b> column, so you can decide whether to trust what you are
-            reading.
-          </p>
-
-          <div class="enc">
-            <div>
-              <div class="enc__shot">
-                <img
-                src="assets/enc-column.png"
-                width="1180"
-                height="421"
-                alt="Close-up of the Severity, Enc and Message columns. The Enc column differs row by row: UTF-8, Shift_JIS, UTF-8 (MSG-SD/BOM-Missing) and so on."
-                />
+          <div class="decode">
+            <div class="hud">
+              <div class="hud__bar">
+                <span class="readout">One datagram / RFC 3164 / UTF-8 payload</span>
               </div>
-              <p class="enc__aside">
-                Severity is colour-coded too (<span class="sev sev--ok">Notice</span>,
-                <span class="sev sev--warn">Warning</span>,
-                <span class="sev sev--error">Error</span>,
-                <span class="sev sev--debug">Debug</span>). The original bytes are
-                kept, so any row can be copied back out with
-                <b>Copy as Hex</b> — which tells you whether a display problem is on
-                the wire or in the viewer.
-              </p>
+              <div class="hud__body">
+                <p class="decode__line decode__bytes">
+                  <span class="readout">What arrived on the wire</span>
+                  3c 31 33 32 3e 61 75 74 68 3a 20 <b>e8 aa 8d e8 a8 bc e3 81 ab
+                  e5 a4 b1 e6 95 97 e3 81 97 e3 81 be e3 81 97 e3 81 9f</b> 3a 20 …
+                </p>
+                <p class="decode__line decode__bad">
+                  <span class="readout">A receiver locked to one encoding</span>
+                  &lt;132&gt;auth: 隱崎ｨｼ縺ｫ螟ｱ謨励＠縺ｾ縺励◆: 繝ｦ繝ｼ繧ｶ繝ｼ admin
+                </p>
+                <p class="decode__line decode__good">
+                  <span class="readout">What vlt-syslogd shows</span>
+                  認証に失敗しました: ユーザー admin (3 回目)<span class="tagpill"
+                    >Enc: UTF-8</span
+                  >
+                </p>
+              </div>
             </div>
 
             <dl class="enc__list">
@@ -157,64 +177,70 @@
             </dl>
           </div>
 
+          <p style="margin-top: 1.75rem; max-width: 46em">
+            The original bytes are kept, so any row can be copied back out with
+            <b>Copy as Hex</b> — which tells you whether a display problem is on
+            the wire or in the viewer.
+          </p>
         </div>
       </section>
 
-      <section class="section" id="shapes">
+      <section class="section" id="units">
         <div class="wrap">
-          <h2>Three shapes</h2>
-          <p class="section__lede">
-            The part that reads syslog is the same code in all three; only how
-            you run it differs. Start with Portable if you are not sure.
-          </p>
-
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Shape</th>
-                  <th scope="col">What it is</th>
-                  <th scope="col">Listens on</th>
-                  <th scope="col">Resident</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Portable</td>
-                  <td>
-                    A self-contained GUI that opens the UDP socket itself. Double
-                    click it and it is already receiving. No installer.
-                  </td>
-                  <td><code>514/udp</code></td>
-                  <td>no</td>
-                </tr>
-                <tr>
-                  <td>Server</td>
-                  <td>
-                    The headless engine. Runs as a Windows service, a launchd
-                    daemon or a systemd unit, collecting from boot.
-                  </td>
-                  <td>
-                    <code>514/udp</code><br /><code>5141/tcp</code><br /><code
-                      >5142/tcp</code
-                    >
-                  </td>
-                  <td>yes</td>
-                </tr>
-                <tr>
-                  <td>Console</td>
-                  <td>
-                    The GUI that attaches to a running Server over TCP. Closing
-                    it does not stop collection. Service control lives here too.
-                  </td>
-                  <td>—</td>
-                  <td>no</td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="section__head">
+            <h2>One engine, three shapes</h2>
+            <p class="section__lede">
+              The part that reads syslog is the same code in all three; only how
+              you run it differs. Start with Portable if you are not sure.
+            </p>
           </div>
 
-          <p style="margin-top: 1.5rem">
+          <div class="units">
+            <div class="unit">
+              <h3>Portable</h3>
+              <p class="unit__id">vlt-syslogd-portable</p>
+              <p>
+                A self-contained GUI that opens the UDP socket itself. Double
+                click it and it is already receiving. No installer, no service.
+              </p>
+              <dl>
+                <div><dt>Bind</dt><dd>514/udp</dd></div>
+                <div><dt>Priv</dt><dd>none (Windows)</dd></div>
+                <div><dt>Resident</dt><dd>no</dd></div>
+              </dl>
+            </div>
+
+            <div class="unit">
+              <h3>Server</h3>
+              <p class="unit__id">vlt-syslogd-srv</p>
+              <p>
+                The headless engine. Runs as a Windows service, a launchd daemon
+                or a systemd unit, collecting from boot and writing to disk.
+              </p>
+              <dl>
+                <div><dt>Bind</dt><dd>514/udp</dd></div>
+                <div><dt>Stream</dt><dd>5141/tcp</dd></div>
+                <div><dt>Ctrl</dt><dd>5142/tcp</dd></div>
+                <div><dt>Resident</dt><dd>yes</dd></div>
+              </dl>
+            </div>
+
+            <div class="unit">
+              <h3>Console</h3>
+              <p class="unit__id">vlt-syslogd-console</p>
+              <p>
+                The GUI that attaches to a running Server over TCP. Closing it
+                does not stop collection. Service control lives here too.
+              </p>
+              <dl>
+                <div><dt>Link</dt><dd>127.0.0.1:5141</dd></div>
+                <div><dt>Ctrl</dt><dd>127.0.0.1:5142</dd></div>
+                <div><dt>Resident</dt><dd>no</dd></div>
+              </dl>
+            </div>
+          </div>
+
+          <p style="margin-top: 1.5rem; max-width: 46em">
             The stream (5141) and control (5142) channels are loopback-only by
             default and protected by a shared token. See
             <a href="manual.en.html#network">the network section of the manual</a>.
@@ -222,12 +248,95 @@
         </div>
       </section>
 
+      <section class="section" id="plates">
+        <div class="wrap">
+          <div class="section__head">
+            <h2>The real thing</h2>
+            <p class="section__lede">
+              Captured from the v0.4.0 Windows release binaries running on
+              Windows 11, fed a syslog stream mixing UTF-8 and Shift_JIS.
+            </p>
+          </div>
+
+          <figure class="plate hud">
+            <div class="plate__frame">
+              <a href="assets/portable-main.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/portable-main.png"
+                  width="1698"
+                  height="989"
+                  alt="The Portable log view: five columns — Time, Tag, Severity, Enc, Message — showing UTF-8 and Shift_JIS Japanese messages rendered correctly side by side."
+                />
+              </a>
+            </div>
+            <figcaption class="plate__caption">
+              <b>Portable — the log view</b>
+              The Enc column carries <code>UTF-8</code>, <code>Shift_JIS</code>
+              and <code>Shift_JIS (MSG-SD/BOM-Missing)</code> in the same screen
+              — different senders, different framings, all readable.
+              <a class="plate__full" href="assets/portable-main.png" target="_blank" rel="noopener"
+                >Open full size</a
+              >
+            </figcaption>
+          </figure>
+
+          <div class="plate plate--split">
+            <div class="hud">
+              <div class="plate__frame">
+                <a href="assets/portable-prefs.png" target="_blank" rel="noopener">
+                  <img
+                    src="assets/portable-prefs-detail.png"
+                    width="760"
+                    height="215"
+                    alt="The preferences dialog: listening port 514 and the log directory path."
+                  />
+                </a>
+              </div>
+            </div>
+            <div class="plate__caption">
+              <b>Preferences</b>
+              Two settings: the port to listen on and where to write logs. If 514
+              is already taken, change it here. Whether the bind succeeded is
+              printed as the first row of the log view.
+              <a class="plate__full" href="assets/portable-prefs.png" target="_blank" rel="noopener"
+                >Open the whole window</a
+              >
+            </div>
+          </div>
+
+          <figure class="plate hud">
+            <div class="plate__frame">
+              <a href="assets/console-main.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/console-main.png"
+                  width="1698"
+                  height="989"
+                  alt="Console attached to Server: a green 'receiving (127.0.0.1:5141)' indicator and start/stop/restart service buttons."
+                />
+              </a>
+            </div>
+            <figcaption class="plate__caption">
+              <b>Console — attached to a resident Server</b>
+              The green indicator means the stream channel is live. Service
+              start, stop and restart are here too. (In this capture the engine
+              was launched directly rather than registered, so the service state
+              reads "not installed".)
+              <a class="plate__full" href="assets/console-main.png" target="_blank" rel="noopener"
+                >Open full size</a
+              >
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
       <section class="section" id="install">
         <div class="wrap">
-          <h2>Get it and run it</h2>
-          <p class="section__lede">
-            Latest is v0.4.0. Take only what your case needs.
-          </p>
+          <div class="section__head">
+            <h2>Get it and run it</h2>
+            <p class="section__lede">
+              Latest is v0.4.0. Take only what your case needs.
+            </p>
+          </div>
 
           <div class="table-scroll">
             <table>
@@ -338,7 +447,9 @@ $u.Send($b, $b.Length, '127.0.0.1', 514) | Out-Null; $u.Close()</code></pre>
 
       <section class="section" id="limits">
         <div class="wrap">
-          <h2>Worth knowing first</h2>
+          <div class="section__head">
+            <h2>Worth knowing first</h2>
+          </div>
           <div class="notes">
             <div class="note">
               <h3>514 is a privileged port on macOS and Linux</h3>
@@ -346,8 +457,7 @@ $u.Send($b, $b.Length, '127.0.0.1', 514) | Out-Null; $u.Close()</code></pre>
                 Ports below 1024 need root. On macOS (Mojave and later)
                 <code>0.0.0.0:514</code> does not, but binding a specific
                 interface such as <code>127.0.0.1:514</code> still does. On Linux
-                you need root or <code>CAP_NET_BIND_SERVICE</code>. Moving above
-                1024 sidesteps the whole question.
+                you need root or <code>CAP_NET_BIND_SERVICE</code>.
               </p>
             </div>
             <div class="note">
@@ -426,10 +536,32 @@ $u.Send($b, $b.Length, '127.0.0.1', 514) | Out-Null; $u.Close()</code></pre>
 
         <div class="colophon__end">
           <span>© 2026 veltrea — MIT License</span>
-          <span>Covers v0.4.0</span>
+          <span>Display face: Chakra Petch (SIL OFL 1.1)</span>
+          <span>v0.4.0</span>
         </div>
       </div>
     </footer>
+
+    <script type="application/json" id="feed-data">
+      [
+        {"k":"ok","tag":"sysconf","enc":"UTF-8","msg":"構成をフラッシュメモリに保存しました (rev.184)"},
+        {"k":"ok","tag":"link","enc":"Shift_JIS","msg":"GigabitEthernet0/1 がリンクアップしました"},
+        {"k":"ok","tag":"vpn","enc":"UTF-8 (SD/NoBOM)","msg":"IPsec SA established with peer 192.0.2.44 (tunnel-osaka)"},
+        {"k":"warn","tag":"auth","enc":"Shift_JIS","msg":"認証に失敗しました: ユーザー admin (3 回目)"},
+        {"k":"ok","tag":"smbd","enc":"UTF-8","msg":"共有フォルダ 営業部_2026年度 をマウントしました"},
+        {"k":"error","tag":"chassis","enc":"Shift_JIS","msg":"ファンユニット2 の回転数が低下しています (1,180 rpm)"},
+        {"k":"ok","tag":"dhcp","enc":"UTF-8","msg":"DHCPACK to 192.0.2.115 (lease 86400s)"},
+        {"k":"debug","tag":"smbd","enc":"UTF-8","msg":"session setup: workstation=PC-0421 dialect=SMB3_11"},
+        {"k":"ok","tag":"envmon","enc":"Shift_JIS (SD/NoBOM)","msg":"温度センサー: 筐体内 42℃ (正常範囲)"},
+        {"k":"error","tag":"power","enc":"Shift_JIS","msg":"電源ユニット1 に異常を検出。冗長構成が失われました"},
+        {"k":"error","tag":"power","enc":"Shift_JIS","msg":"UPS がバッテリー運転に切り替わりました (残り 18 分)"},
+        {"k":"ok","tag":"backup","enc":"UTF-8","msg":"日次バックアップ完了 — 12,884 files / 41.2 GB"},
+        {"k":"ok","tag":"stp","enc":"UTF-8","msg":"Topology change received on Po1"},
+        {"k":"ok","tag":"policy","enc":"Shift_JIS","msg":"ポリシー \"内部→DMZ\" を適用しました"},
+        {"k":"warn","tag":"wlan","enc":"UTF-8","msg":"AP-3F: クライアント 2.4GHz 帯の混雑を検出 (利用率 78%)"},
+        {"k":"ok","tag":"printer","enc":"Shift_JIS","msg":"印刷ジョブ 見積書_2026-08.pdf を受け付けました"}
+      ]
+    </script>
 
     <script src="site.js" defer></script>
   </body>

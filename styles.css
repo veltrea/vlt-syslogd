@@ -1,45 +1,59 @@
 @charset "UTF-8";
 /* ==========================================================================
-   Veltrea Syslog Server — site styles
+   Veltrea Syslog Server — site styles (SF / telemetry console)
 
-   方針: この分野の定番を、丁寧にやる。
-   小さな無料ツールのサイト（Visual Syslog Server / lnav / klogg など）は
-   例外なく「アプリのウィンドウを実寸で真ん中に置き、他に何もしない」。
-   演出しているのは席数を売っている側だけなので、そちらには寄せない。
+   世界: 地上局のテレメトリ・コンソール。
+   この製品は遠くの機器から届く流れを受けて読む道具なので、
+   管制卓の言語（HUD の枠、読み出し、走査線、生きているログの流れ）で組む。
 
-   したがってここには、飾りの背景・装飾用の罫・独自書体・世界観の演出を
-   一切置かない。色は意味のあるところ——重大度と状態——にだけ使う。
+   演出は入れるが、破ってはいけない線は守る:
+   - 実物のスクリーンショットと本文は、必ず読める明度差を保つ
+   - prefers-reduced-motion では動きを全部止め、静止した完成形を出す
+   - 光らせるのは意味のあるもの（重大度・状態・受信数）だけ
    ========================================================================== */
 
+@font-face {
+  font-family: "Chakra Display";
+  src: url("assets/fonts/chakra-subset.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+2010-2015, U+2018-201D, U+2022, U+2026,
+    U+2032-2033, U+2192, U+25A0, U+25CF, U+2500-257F;
+}
+
 :root {
-  /* 地と字 */
-  --bg: #fbfbf9;
-  --bg-2: #f3f3f0;
-  --band: #14161a; /* スクリーンショットが載る暗い帯 */
-  --fg: #16191c;
-  --fg-dim: #545b62;
-  --fg-faint: #666d75;
-  --rule: #e2e2dc;
-  --rule-strong: #c8c8c0;
-  --rule-ui: #8c8c84; /* 押せるものの輪郭。3:1 を満たす濃さ */
+  --void: #04070c;
+  --panel: #0a1119;
+  --panel-2: #0e1823;
+  --line: #1b2b3a;
+  --line-hot: #23405a;
+  --line-ui: #446c8c; /* 押せるものの輪郭。3:1 以上 */
 
-  /* 重大度の色。アプリ側の配色を明るい地に合わせて濃くしたもの。
-     ここ以外では使わない（装飾に流用しない）。 */
-  --sev-ok: #1a7f37;
-  --sev-warn: #7f5900;
-  --sev-error: #b3261e;
-  --sev-debug: #56499f;
+  --neon: #35f0c0;
+  --neon-dim: #1d9a7d;
+  --ice: #63cffb;
+  --amber: #ffb547;
+  --magenta: #ff4d78;
+  --violet: #b39dff;
 
-  /* 版面 */
-  --page: 68rem;
-  --measure: 38em;
-  --gutter: clamp(1.15rem, 4vw, 2.5rem);
+  --fg: #dbe7ef;
+  --fg-dim: #93a9b9;
+  --fg-faint: #6c8195;
 
+  --page: 78rem;
+  --measure: 36em;
+  --gutter: clamp(1.15rem, 3.5vw, 2.5rem);
+
+  --display: "Chakra Display", "Hiragino Kaku Gothic ProN", "Yu Gothic",
+    "Noto Sans JP", Meiryo, system-ui, sans-serif;
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI",
     "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Noto Sans JP",
     Meiryo, system-ui, sans-serif;
-  --font-data: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas,
+  --mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas,
     "Noto Sans Mono", monospace;
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 *,
@@ -50,24 +64,58 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 4.5rem;
+  scroll-padding-top: 5rem;
   -webkit-text-size-adjust: 100%;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
 }
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--void);
   color: var(--fg);
   font-family: var(--font);
   font-size: 1rem;
   line-height: 1.75;
   font-feature-settings: "palt" 1;
+  overflow-x: hidden;
+}
+
+/* 走査線と、遠くの地平の光。装飾ではあるが、この世界の骨。 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      120% 70% at 50% -10%,
+      rgba(53, 240, 192, 0.14),
+      transparent 60%
+    ),
+    radial-gradient(
+      90% 50% at 100% 0%,
+      rgba(99, 207, 251, 0.1),
+      transparent 55%
+    );
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.02) 0 1px,
+    transparent 1px 3px
+  );
+  mix-blend-mode: overlay;
+}
+
+body > * {
+  position: relative;
+  z-index: 2;
 }
 
 img {
@@ -79,11 +127,11 @@ img {
 a {
   color: inherit;
   text-underline-offset: 0.2em;
-  text-decoration-color: var(--rule-strong);
+  text-decoration-color: var(--line-hot);
 }
 
 a:hover {
-  text-decoration-color: currentColor;
+  text-decoration-color: var(--neon);
 }
 
 h1,
@@ -91,26 +139,34 @@ h2,
 h3,
 h4 {
   margin: 0;
-  line-height: 1.42;
-  font-weight: 700;
+  line-height: 1.3;
+  font-weight: 600;
   text-wrap: balance;
 }
 
+h1,
+h2 {
+  font-family: var(--display);
+  letter-spacing: 0.02em;
+}
+
 h1 {
-  font-size: clamp(1.8rem, 1.35rem + 2vw, 2.5rem);
-  letter-spacing: -0.01em;
+  font-size: clamp(2rem, 1.3rem + 3vw, 3.5rem);
+  line-height: 1.16;
 }
 
 h2 {
-  font-size: clamp(1.3rem, 1.15rem + 0.7vw, 1.6rem);
+  font-size: clamp(1.4rem, 1.1rem + 1.2vw, 2rem);
 }
 
 h3 {
-  font-size: 1.08rem;
+  font-size: 1.06rem;
+  font-weight: 700;
 }
 
 h4 {
-  font-size: 1rem;
+  font-size: 0.98rem;
+  font-weight: 700;
 }
 
 p {
@@ -121,14 +177,15 @@ p {
 code,
 kbd,
 samp {
-  font-family: var(--font-data);
+  font-family: var(--mono);
   font-size: 0.88em;
   font-feature-settings: normal;
+  color: var(--ice);
 }
 
 :focus-visible {
-  outline: 2px solid var(--fg);
-  outline-offset: 2px;
+  outline: 2px solid var(--neon);
+  outline-offset: 3px;
 }
 
 .wrap {
@@ -140,10 +197,11 @@ samp {
   position: absolute;
   left: -9999px;
   top: 0;
-  background: var(--fg);
-  color: #fff;
+  background: var(--neon);
+  color: var(--void);
   padding: 0.55rem 1rem;
   z-index: 99;
+  font-weight: 700;
 }
 .skip:focus {
   left: 1rem;
@@ -166,27 +224,38 @@ samp {
   white-space: nowrap;
 }
 
-/* --- 柱 ----------------------------------------------------------------- */
+/* 読み出しの語（HUD のラベル） */
+.readout {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+
+/* --- 柱：管制卓の上端 ---------------------------------------------------- */
 .masthead {
   position: sticky;
   top: 0;
-  z-index: 30;
+  z-index: 40;
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.55rem var(--gutter);
-  background: color-mix(in srgb, var(--bg) 94%, transparent);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--rule);
-  font-size: 0.9rem;
+  padding: 0.5rem var(--gutter);
+  background: color-mix(in srgb, var(--void) 88%, transparent);
+  backdrop-filter: blur(10px) saturate(150%);
+  border-bottom: 1px solid var(--line);
+  font-size: 0.86rem;
 }
 
 .masthead__mark {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
   text-decoration: none;
-  font-weight: 700;
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
@@ -194,6 +263,7 @@ samp {
   width: 22px;
   height: 22px;
   border-radius: 5px;
+  box-shadow: 0 0 0 1px var(--line-hot), 0 0 12px rgba(53, 240, 192, 0.35);
 }
 
 .masthead nav {
@@ -207,23 +277,23 @@ samp {
   text-decoration: none;
   color: var(--fg-dim);
   padding-block: 0.3rem;
-  border-bottom: 2px solid transparent;
+  border-bottom: 1px solid transparent;
   white-space: nowrap;
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
 }
 
 .masthead nav a:hover,
 .masthead nav a[aria-current="page"] {
-  color: var(--fg);
-  border-bottom-color: var(--fg);
+  color: var(--neon);
+  border-bottom-color: var(--neon);
 }
 
-@media (max-width: 52rem) {
+@media (max-width: 56rem) {
   .masthead nav a.jump {
     display: none;
   }
 }
 
-/* 狭い画面では柱の名前を畳んで、行き先だけを残す */
 @media (max-width: 30rem) {
   .masthead__name {
     display: none;
@@ -232,8 +302,8 @@ samp {
 
 .lang {
   display: inline-flex;
-  border: 1px solid var(--rule-ui);
-  border-radius: 3px;
+  border: 1px solid var(--line-ui);
+  border-radius: 2px;
   overflow: hidden;
 }
 .lang a {
@@ -243,28 +313,118 @@ samp {
   white-space: nowrap;
 }
 .lang a[aria-current="true"] {
-  background: var(--fg);
-  color: var(--bg);
+  background: var(--neon);
+  color: var(--void);
+  font-weight: 700;
 }
 
-/* --- 冒頭 --------------------------------------------------------------- */
-/* 名前・一行・対応 OS・ダウンロード。短く済ませ、すぐ実物へ渡す。 */
-.intro {
-  padding-block: clamp(2.25rem, 5vw, 3.5rem) clamp(1.5rem, 3vw, 2.25rem);
+/* --- HUD の枠 ------------------------------------------------------------ */
+/* 四隅の角括弧。管制卓の枠そのもので、飾りの罫ではない。 */
+.hud {
+  position: relative;
+  background: linear-gradient(
+    160deg,
+    var(--panel-2),
+    var(--panel) 55%,
+    var(--void)
+  );
+  border: 1px solid var(--line);
 }
 
-.intro h1 {
-  margin-bottom: 0.45em;
+.hud::before,
+.hud::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--neon);
+  pointer-events: none;
 }
 
-.intro__lede {
-  font-size: clamp(1.02rem, 0.98rem + 0.3vw, 1.2rem);
+.hud::before {
+  top: -1px;
+  left: -1px;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.hud::after {
+  bottom: -1px;
+  right: -1px;
+  border-left: 0;
+  border-top: 0;
+}
+
+.hud__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  background: rgba(6, 12, 18, 0.6);
+}
+
+.hud__bar .readout {
   color: var(--fg-dim);
-  max-width: 34em;
-  margin-bottom: 1.35em;
 }
 
-.intro__lede b {
+.hud__body {
+  padding: clamp(0.85rem, 2vw, 1.35rem);
+}
+
+/* 状態灯 */
+.led {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--neon);
+}
+
+.led::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--neon);
+  box-shadow: 0 0 8px var(--neon);
+}
+
+/* --- 一面：管制卓 -------------------------------------------------------- */
+.console {
+  padding-block: clamp(2rem, 5vw, 4rem) clamp(2.5rem, 5vw, 4rem);
+}
+
+.console__grid {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .console__grid {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  }
+}
+
+.console h1 em {
+  font-style: normal;
+  color: var(--neon);
+  text-shadow: 0 0 24px rgba(53, 240, 192, 0.55);
+}
+
+.console__lede {
+  margin-top: 1.1rem;
+  font-size: clamp(1rem, 0.95rem + 0.3vw, 1.15rem);
+  color: var(--fg-dim);
+  max-width: 30em;
+}
+
+.console__lede b {
   color: var(--fg);
   font-weight: 600;
 }
@@ -273,140 +433,280 @@ samp {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.7rem 1rem;
+  gap: 0.75rem 1rem;
+  margin-top: 1.75rem;
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.55rem 1.15rem;
+  padding: 0.62rem 1.3rem;
   font: inherit;
+  font-family: var(--display);
   font-weight: 600;
+  letter-spacing: 0.06em;
   text-decoration: none;
-  border: 1px solid var(--fg);
-  border-radius: 4px;
-  background: var(--fg);
-  color: var(--bg);
-  transition: background-color 0.15s ease-out, color 0.15s ease-out;
+  border: 1px solid var(--neon);
+  border-radius: 2px;
+  background: var(--neon);
+  color: var(--void);
+  box-shadow: 0 0 24px -6px rgba(53, 240, 192, 0.75);
+  transition: box-shadow 0.25s var(--ease), transform 0.25s var(--ease);
 }
 
 .btn:hover {
-  background: #000;
-  border-color: #000;
+  box-shadow: 0 0 34px -2px rgba(53, 240, 192, 0.9);
+  transform: translateY(-1px);
 }
 
 .btn--plain {
   background: transparent;
   color: var(--fg);
-  border-color: var(--rule-ui);
+  border-color: var(--line-ui);
+  box-shadow: none;
 }
 
 .btn--plain:hover {
-  background: var(--bg-2);
-  border-color: var(--fg);
-  color: var(--fg);
+  border-color: var(--neon);
+  color: var(--neon);
+  box-shadow: 0 0 20px -8px rgba(53, 240, 192, 0.8);
 }
 
 .meta {
-  font-size: 0.86rem;
+  font-size: 0.82rem;
   color: var(--fg-faint);
   line-height: 1.6;
+  font-family: var(--mono);
 }
 
-/* --- 実物の帯 ----------------------------------------------------------- */
-/* アプリのウィンドウは暗い帯の上に全幅で置く。ここがこのページの主。 */
-.band {
-  background: var(--band);
-  padding-block: clamp(1.25rem, 3vw, 2.25rem);
-  border-block: 1px solid var(--rule);
+/* 読み出しの帯 */
+.gauges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1px;
+  margin-top: 2rem;
+  background: var(--line);
+  border: 1px solid var(--line);
 }
 
-.band figure {
-  margin: 0;
+.gauge {
+  background: var(--panel);
+  padding: 0.7rem 0.9rem;
 }
 
-.band img {
-  width: 100%;
-  border: 1px solid #2b2f36;
-  border-radius: 3px;
-}
-
-.band figcaption {
-  margin-top: 0.85rem;
-  color: #99a2ac;
-  font-size: 0.86rem;
-  max-width: 62em;
-}
-
-.band figcaption b {
-  color: #e8eaed;
+.gauge b {
+  display: block;
+  font-family: var(--display);
+  font-size: 1.5rem;
   font-weight: 600;
+  line-height: 1.1;
+  color: var(--neon);
+  font-variant-numeric: tabular-nums;
 }
 
-.band figcaption a {
-  color: #c3cad2;
+.gauge span {
+  display: block;
+  margin-top: 0.2rem;
 }
 
-/* --- 章 ----------------------------------------------------------------- */
+/* --- 生きているログ ------------------------------------------------------ */
+.stream {
+  font-family: var(--mono);
+  font-size: clamp(0.66rem, 0.55rem + 0.35vw, 0.79rem);
+  line-height: 1.55;
+}
+
+.stream__head,
+.stream__row {
+  display: grid;
+  grid-template-columns: 6.9rem 4.6rem 9.2rem minmax(0, 1fr);
+  gap: 0.5rem;
+  padding: 0.22rem 0.15rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 34rem) {
+  .stream__head,
+  .stream__row {
+    grid-template-columns: 5.6rem 7.4rem minmax(0, 1fr);
+  }
+  .stream__head span:nth-child(2),
+  .stream__row span:nth-child(2) {
+    display: none;
+  }
+}
+
+.stream__head {
+  color: var(--fg-faint);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 0.35rem;
+  padding-bottom: 0.4rem;
+}
+
+.stream__rows {
+  height: clamp(15rem, 34vh, 21rem);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.05rem;
+}
+
+.stream__row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stream__row .t {
+  color: var(--fg-faint);
+}
+.stream__row .g {
+  color: var(--fg-dim);
+}
+.stream__row .e {
+  color: var(--ice);
+  font-size: 0.92em;
+}
+.stream__row .m {
+  color: var(--fg);
+}
+
+.stream__row.is-ok .s,
+.stream__row.is-ok .m {
+  color: var(--neon);
+}
+.stream__row.is-warn .s,
+.stream__row.is-warn .m {
+  color: var(--amber);
+}
+.stream__row.is-error .s,
+.stream__row.is-error .m {
+  color: var(--magenta);
+}
+.stream__row.is-debug .s,
+.stream__row.is-debug .m {
+  color: var(--violet);
+}
+
+.stream__row.is-new {
+  animation: rowin 0.45s var(--ease) both;
+}
+
+@keyframes rowin {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+    filter: brightness(2.2);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* --- 章 ------------------------------------------------------------------ */
 .section {
-  padding-block: clamp(2.5rem, 5vw, 4rem);
-  border-top: 1px solid var(--rule);
+  padding-block: clamp(2.75rem, 6vw, 5rem);
+  border-top: 1px solid var(--line);
 }
 
-.section > .wrap > h2 {
-  margin-bottom: 0.7em;
+.section__head {
+  margin-bottom: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.section__head h2 {
+  margin-bottom: 0.55em;
 }
 
 .section__lede {
   color: var(--fg-dim);
-  max-width: 40em;
-  margin-bottom: 1.75rem;
+  max-width: 42em;
 }
 
-/* --- Enc 欄の説明 ------------------------------------------------------- */
-.enc {
+/* --- 復号の実演 ---------------------------------------------------------- */
+.decode {
   display: grid;
   gap: clamp(1.25rem, 3vw, 2.25rem);
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 
-@media (min-width: 58rem) {
-  .enc {
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+@media (min-width: 60rem) {
+  .decode {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   }
 }
 
-.enc__shot {
-  background: var(--band);
-  padding: 0.5rem;
-  border-radius: 3px;
+.decode__line {
+  font-family: var(--mono);
+  font-size: clamp(0.72rem, 0.6rem + 0.4vw, 0.88rem);
+  line-height: 1.7;
+  padding-block: 0.75rem;
+  border-bottom: 1px solid var(--line);
+  word-break: break-all;
 }
 
-.enc__shot img {
+.decode__line:last-of-type {
+  border-bottom: 0;
+}
+
+.decode__line .readout {
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.decode__bytes {
+  color: var(--fg-faint);
+}
+
+.decode__bytes b {
+  color: var(--ice);
+  font-weight: 400;
+}
+
+.decode__bad {
+  color: var(--magenta);
+}
+
+.decode__good {
+  font-family: var(--font);
+  font-size: 1rem;
+  color: var(--neon);
+  font-weight: 600;
+  text-shadow: 0 0 18px rgba(53, 240, 192, 0.4);
+}
+
+.tagpill {
+  display: inline-block;
+  margin-inline-start: 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--ice);
+  border: 1px solid var(--line-hot);
   border-radius: 2px;
-}
-
-.enc__aside {
-  margin: 1.1rem 0 0;
-  font-size: 0.94rem;
-  color: var(--fg-dim);
-  max-width: none;
+  padding: 0.05em 0.45em;
+  text-shadow: none;
+  vertical-align: 0.12em;
 }
 
 .enc__list {
   margin: 0;
-  font-size: 0.94rem;
+  font-size: 0.92rem;
 }
 
 .enc__list dt {
-  font-family: var(--font-data);
-  font-size: 0.83rem;
-  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--ice);
   margin-top: 1rem;
   padding-top: 0.8rem;
-  border-top: 1px solid var(--rule);
+  border-top: 1px solid var(--line);
 }
 
 .enc__list dt:first-of-type {
@@ -418,36 +718,154 @@ samp {
 .enc__list dd {
   margin: 0.25rem 0 0;
   color: var(--fg-dim);
-  max-width: 34em;
+  max-width: 32em;
 }
 
-/* 重大度の色は意味のあるところだけ */
-.sev {
+/* --- 三つの形 ------------------------------------------------------------ */
+.units {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+
+@media (min-width: 58rem) {
+  .units {
+    grid-template-columns: 1.15fr 1.15fr 1fr;
+  }
+}
+
+.unit {
+  background: var(--panel);
+  padding: clamp(1rem, 2vw, 1.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.unit h3 {
+  font-family: var(--display);
+  font-size: 1.35rem;
+  letter-spacing: 0.04em;
+  color: var(--neon);
+}
+
+.unit__id {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  color: var(--fg-faint);
+  letter-spacing: 0.06em;
+  margin-top: -0.35rem;
+}
+
+.unit p {
+  margin: 0;
+  color: var(--fg-dim);
+  font-size: 0.94rem;
+  max-width: none;
+}
+
+.unit dl {
+  margin: auto 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.unit dl > div {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.unit dt {
+  flex: 0 0 5.2em;
+  color: var(--fg-faint);
+  letter-spacing: 0.08em;
+}
+
+.unit dd {
+  margin: 0;
+  color: var(--ice);
+}
+
+/* --- 図版 ---------------------------------------------------------------- */
+.plate {
+  margin: 0 0 clamp(1.75rem, 4vw, 2.75rem);
+}
+
+.plate:last-child {
+  margin-bottom: 0;
+}
+
+.plate__frame {
+  position: relative;
+  padding: 0.55rem;
+}
+
+.plate__frame a {
+  display: block;
+}
+
+.plate__frame img {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+
+.plate__caption {
+  margin-top: 0.75rem;
+  font-size: 0.86rem;
+  color: var(--fg-dim);
+  max-width: 58em;
+}
+
+.plate__caption b {
+  display: block;
+  font-family: var(--display);
+  font-size: 0.98rem;
+  letter-spacing: 0.04em;
+  color: var(--fg);
   font-weight: 600;
 }
-.sev--ok {
-  color: var(--sev-ok);
-}
-.sev--warn {
-  color: var(--sev-warn);
-}
-.sev--error {
-  color: var(--sev-error);
-}
-.sev--debug {
-  color: var(--sev-debug);
+
+.plate__full {
+  display: block;
+  width: fit-content;
+  margin-top: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--fg-faint);
 }
 
-/* --- 表 ----------------------------------------------------------------- */
+.plate__full:hover {
+  color: var(--neon);
+}
+
+@media (min-width: 54rem) {
+  .plate--split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: center;
+  }
+  .plate--split .plate__caption {
+    margin-top: 0;
+  }
+}
+
+/* --- 表 ------------------------------------------------------------------ */
 .table-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  border-block: 1px solid var(--line);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   min-width: 34rem;
 }
 
@@ -455,14 +873,18 @@ th,
 td {
   text-align: start;
   padding: 0.7rem 1.1rem 0.7rem 0;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--line);
   vertical-align: top;
 }
 
 thead th {
-  font-weight: 700;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 400;
+  color: var(--fg-faint);
   white-space: nowrap;
-  border-bottom-color: var(--rule-strong);
 }
 
 tbody td {
@@ -478,7 +900,7 @@ tbody tr:last-child td {
   border-bottom: 0;
 }
 
-/* --- 手順 --------------------------------------------------------------- */
+/* --- 手順 ---------------------------------------------------------------- */
 .steps {
   counter-reset: step;
   list-style: none;
@@ -491,38 +913,41 @@ tbody tr:last-child td {
 .steps > li {
   counter-increment: step;
   display: grid;
-  gap: 0.2rem 0.9rem;
-  grid-template-columns: 1.6rem minmax(0, 1fr);
+  gap: 0.2rem 1rem;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
 }
 
 .steps > li::before {
-  content: counter(step);
+  content: counter(step, decimal-leading-zero);
+  font-family: var(--display);
+  font-size: 1.15rem;
+  color: var(--neon);
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  color: var(--fg-faint);
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .steps h3 {
   margin-bottom: 0.35rem;
 }
 
-/* --- コマンド欄 --------------------------------------------------------- */
+/* --- 端末 ---------------------------------------------------------------- */
 pre {
   margin: 0 0 1.1rem;
-  padding: 0.85rem 1rem;
-  background: var(--band);
-  color: #e2e6ea;
-  border-radius: 4px;
+  padding: 0.9rem 1.05rem;
+  background: #060b11;
+  color: #cfe3ee;
+  border: 1px solid var(--line);
+  border-radius: 2px;
   overflow-x: auto;
-  font-family: var(--font-data);
-  font-size: 0.83rem;
+  font-family: var(--mono);
+  font-size: 0.82rem;
   line-height: 1.7;
   tab-size: 2;
 }
 
 pre code {
   font-size: inherit;
+  color: inherit;
 }
 
 .cmd {
@@ -534,16 +959,17 @@ pre code {
   top: 0.4rem;
   inset-inline-end: 0.4rem;
   font: inherit;
-  font-family: var(--font);
-  font-size: 0.72rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
   padding: 0.15rem 0.55rem;
-  color: #aab2ba;
-  background: #22262c;
-  border: 1px solid #343a42;
-  border-radius: 3px;
+  color: var(--fg-dim);
+  background: #0b141c;
+  border: 1px solid var(--line-ui);
+  border-radius: 2px;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.15s ease-out, color 0.15s ease-out;
+  transition: opacity 0.2s var(--ease), color 0.2s var(--ease);
 }
 
 .cmd:hover button,
@@ -552,28 +978,39 @@ pre code {
 }
 
 .cmd button:hover {
-  color: #fff;
+  color: var(--neon);
+  border-color: var(--neon);
 }
 
-/* --- 注意書き ----------------------------------------------------------- */
+/* --- 警告 ---------------------------------------------------------------- */
 .notes {
   display: grid;
-  gap: 1.5rem;
-  max-width: 44rem;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  max-width: 52rem;
+}
+
+.note {
+  background: var(--panel);
+  padding: clamp(0.9rem, 2vw, 1.3rem);
 }
 
 .note h3 {
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.3rem;
+  color: var(--amber);
 }
 
-.note p:last-child {
+.note p {
   margin-bottom: 0;
+  color: var(--fg-dim);
+  font-size: 0.94rem;
 }
 
 .caution {
-  background: var(--bg-2);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 2px;
   padding: 0.9rem 1.1rem;
   margin-block: 1.35rem;
 }
@@ -581,75 +1018,19 @@ pre code {
 .caution h3,
 .caution h4 {
   margin-bottom: 0.3rem;
+  color: var(--amber);
 }
 
 .caution p:last-child {
   margin-bottom: 0;
 }
 
-/* --- 図版（マニュアル本文） --------------------------------------------- */
-.plate {
-  margin: 0 0 1.75rem;
-}
-
-.plate__frame {
-  background: var(--band);
-  padding: 0.5rem;
-  border-radius: 3px;
-}
-
-.plate__frame a {
-  display: block;
-}
-
-.plate__frame img {
-  border-radius: 2px;
-}
-
-.plate__caption {
-  margin-top: 0.65rem;
-  font-size: 0.88rem;
-  color: var(--fg-dim);
-  max-width: var(--measure);
-}
-
-.plate__caption b {
-  color: var(--fg);
-  font-weight: 600;
-  display: block;
-}
-
-.plate__full {
-  display: block;
-  width: fit-content;
-  margin-top: 0.4rem;
-  font-size: 0.84rem;
-  color: var(--fg-faint);
-}
-
-.plate__full:hover {
-  color: var(--fg);
-}
-
-@media (min-width: 54rem) {
-  .plate--split {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 1.5rem;
-    align-items: start;
-  }
-  .plate--split .plate__caption {
-    margin-top: 0;
-  }
-}
-
-/* --- 奥付 --------------------------------------------------------------- */
+/* --- 奥付 ---------------------------------------------------------------- */
 .colophon {
-  border-top: 1px solid var(--rule);
+  border-top: 1px solid var(--line);
   padding-block: clamp(2rem, 4vw, 3rem);
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   color: var(--fg-dim);
-  background: var(--bg-2);
 }
 
 .colophon__grid {
@@ -659,8 +1040,11 @@ pre code {
 }
 
 .colophon h2 {
-  font-size: 0.9rem;
-  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
   margin-bottom: 0.6rem;
 }
 
@@ -676,19 +1060,26 @@ pre code {
   max-width: none;
 }
 
+.colophon a:hover {
+  color: var(--neon);
+}
+
 .colophon__end {
   margin-top: 2rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--rule);
+  border-top: 1px solid var(--line);
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem 1.5rem;
   justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
   color: var(--fg-faint);
 }
 
 /* ==========================================================================
-   マニュアル面
+   マニュアル面 — 同じ卓のまま、読むための明度に落とす
    ========================================================================== */
 .doc__layout {
   display: grid;
@@ -704,25 +1095,27 @@ pre code {
 }
 
 .toc {
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   line-height: 1.6;
 }
 
 @media (min-width: 62rem) {
   .toc {
     position: sticky;
-    top: 4.25rem;
+    top: 4.5rem;
     align-self: start;
-    max-height: calc(100vh - 6rem);
+    max-height: calc(100vh - 6.5rem);
     overflow-y: auto;
     padding-inline-end: 1rem;
-    border-inline-end: 1px solid var(--rule);
+    border-inline-end: 1px solid var(--line);
   }
 }
 
 .toc h2 {
-  font-size: 0.78rem;
-  letter-spacing: 0.09em;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--fg-faint);
   margin-bottom: 0.7rem;
 }
@@ -739,10 +1132,11 @@ pre code {
 }
 
 .toc > ol > li > a::before {
-  content: counter(toc) ".";
-  font-variant-numeric: tabular-nums;
+  content: counter(toc, decimal-leading-zero);
+  font-family: var(--mono);
+  font-size: 0.8em;
   color: var(--fg-faint);
-  margin-inline-end: 0.45rem;
+  margin-inline-end: 0.5rem;
 }
 
 .toc a {
@@ -754,12 +1148,11 @@ pre code {
 
 .toc a:hover,
 .toc a.is-current {
-  color: var(--fg);
-  font-weight: 600;
+  color: var(--neon);
 }
 
 .toc ol ol {
-  margin: 0.05rem 0 0.45rem 1.35rem;
+  margin: 0.05rem 0 0.45rem 1.6rem;
 }
 
 .toc ol ol a {
@@ -771,6 +1164,11 @@ pre code {
   max-width: 50rem;
 }
 
+.doc__body h1 {
+  font-size: clamp(1.8rem, 1.4rem + 1.6vw, 2.6rem);
+  margin-bottom: 0.5em;
+}
+
 .doc__body > p:first-of-type {
   color: var(--fg-dim);
   font-size: 1.05rem;
@@ -780,11 +1178,12 @@ pre code {
 .doc__body section {
   padding-top: clamp(1.75rem, 4vw, 2.75rem);
   margin-top: clamp(1.75rem, 4vw, 2.75rem);
-  border-top: 1px solid var(--rule);
+  border-top: 1px solid var(--line);
 }
 
 .doc__body h2 {
   margin-bottom: 0.7em;
+  color: var(--neon);
 }
 
 .doc__body h3 {
@@ -808,6 +1207,24 @@ pre code {
 
 .doc__body li {
   margin-bottom: 0.35em;
+  color: var(--fg-dim);
+}
+
+.doc__body p {
+  color: var(--fg-dim);
+}
+
+.doc__body b,
+.doc__body strong {
+  color: var(--fg);
+}
+
+.doc__body a {
+  color: var(--ice);
+}
+
+.doc__body a:hover {
+  color: var(--neon);
 }
 
 .doc__body .table-scroll {
@@ -819,9 +1236,9 @@ pre code {
 }
 
 .lead-in {
-  background: var(--bg-2);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 2px;
   padding: 0.9rem 1.1rem;
   margin-bottom: 1.5rem;
 }
@@ -832,21 +1249,102 @@ pre code {
   max-width: none;
 }
 
+/* --- 起動の演出（一度だけ） ---------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .boot > * {
+    animation: boot 0.7s var(--ease) both;
+  }
+  .boot > *:nth-child(1) {
+    animation-delay: 0.05s;
+  }
+  .boot > *:nth-child(2) {
+    animation-delay: 0.16s;
+  }
+  .boot > *:nth-child(3) {
+    animation-delay: 0.27s;
+  }
+  .boot > *:nth-child(4) {
+    animation-delay: 0.38s;
+  }
+
+  @keyframes boot {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+      filter: blur(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+  }
+
+  /* 走査線がゆっくり降りる。1 本だけ。 */
+  .console::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    height: 2px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(53, 240, 192, 0.5),
+      transparent
+    );
+    animation: sweep 7s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes sweep {
+    from {
+      transform: translateY(0);
+      opacity: 0;
+    }
+    12% {
+      opacity: 1;
+    }
+    88% {
+      opacity: 1;
+    }
+    to {
+      transform: translateY(var(--sweep, 42rem));
+      opacity: 0;
+    }
+  }
+}
+
+.console {
+  position: relative;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::after {
+    display: none;
+  }
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 @media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+  body::before,
+  body::after,
   .masthead,
   .toc,
   .cmd button {
     display: none;
   }
-  body {
-    background: #fff;
-  }
-  .band,
-  .plate__frame,
-  .enc__shot {
-    background: #fff;
-  }
-  pre {
+  pre,
+  .hud,
+  .note,
+  .caution {
     background: #f2f2f0;
     color: #000;
   }

@@ -12,6 +12,7 @@
     <link rel="alternate" hreflang="ja" href="https://veltrea.github.io/vlt-syslogd/" />
     <link rel="alternate" hreflang="en" href="https://veltrea.github.io/vlt-syslogd/index.en.html" />
     <link rel="icon" href="assets/icon-256.png" type="image/png" />
+    <link rel="preload" as="font" type="font/woff2" href="assets/fonts/chakra-subset.woff2" crossorigin />
     <link rel="stylesheet" href="styles.css" />
     <meta property="og:title" content="Veltrea Syslog Server" />
     <meta
@@ -23,23 +24,24 @@
   </head>
   <body>
     <!--
-      この面は「分野の定番を、丁寧にやる」方針で組んである。
-      同種の無料ツール（Visual Syslog Server / lnav / klogg）はどれも、
-      アプリのウィンドウを実寸で真ん中に置き、それ以外に何もしていない。
-      演出しているのは席数を売っている側だけなので、そこには寄せない。
-      したがって: 装飾なし。独自書体なし。色は重大度と状態にだけ使う。
-      画面の最初の 1/4 で「何か・対応 OS・入手」を済ませ、すぐ実物の画面に渡す。
+      世界: 地上局のテレメトリ・コンソール。
+      この製品は遠くの機器から届く流れを受けて読む道具なので、管制卓の言語で組む。
+      一面の主役はスクリーンショットではなく「実際に流れているログ」——
+      HTML で組んだ卓に、撮影で使ったのと同じ demo feed が 1 行ずつ着信する。
+      光らせるのは意味のあるもの（重大度・状態・受信数）だけ。
+      prefers-reduced-motion では動きを全部止め、静止した完成形を出す。
     -->
     <a class="skip" href="#main">本文へ移動</a>
 
     <header class="masthead">
       <a class="masthead__mark" href="./">
         <img src="assets/icon-256.png" alt="" width="22" height="22" />
-        <span class="masthead__name">Veltrea Syslog Server</span>
+        <span class="masthead__name">VLT-SYSLOGD</span>
       </a>
       <nav aria-label="サイト内">
-        <a class="jump" href="#encoding">文字コード</a>
-        <a class="jump" href="#shapes">三つの形</a>
+        <a class="jump" href="#decode">復号</a>
+        <a class="jump" href="#units">三つの形</a>
+        <a class="jump" href="#plates">画面</a>
         <a class="jump" href="#install">導入</a>
         <a href="manual.html">マニュアル</a>
         <a href="https://github.com/veltrea/vlt-syslogd">GitHub</a>
@@ -51,85 +53,110 @@
     </header>
 
     <main id="main">
-      <!-- 冒頭。名前・一行・入手だけ。 -->
-      <section class="intro">
+      <!-- ===== 一面：管制卓 ===== -->
+      <section class="console">
+        <div class="wrap console__grid">
+          <div class="boot">
+            <p class="readout">Veltrea Syslog Server ／ v0.4.0</p>
+            <h1>syslog の<span class="nowrap">日本語</span>が、<em class="nowrap">化けない</em>。</h1>
+            <p class="console__lede">
+              受信した <b>1 通ごと</b>に文字コードを判定して復号します。
+              Shift_JIS の機器と UTF-8 の機器が同じポートに混ざっていても、
+              どちらもそのまま読めます。インストール不要の単一ファイル。
+            </p>
+            <div class="actions">
+              <a
+                class="btn"
+                href="https://github.com/veltrea/vlt-syslogd/releases/latest"
+                >v0.4.0 をダウンロード</a
+              >
+              <a class="btn btn--plain" href="manual.html">マニュアル</a>
+              <span class="meta">
+                Windows / macOS / Linux (x86_64)<br />
+                Rust 製・MIT License
+              </span>
+            </div>
+          </div>
+
+          <!-- 卓。実際に行が着信する。 -->
+          <div class="hud" data-stream>
+            <div class="hud__bar">
+              <span class="led">RECEIVING</span>
+              <span class="readout">0.0.0.0:514 / UDP</span>
+              <span class="readout" style="margin-inline-start: auto"
+                >RX <span data-count>0000</span></span
+              >
+            </div>
+            <div class="hud__body stream">
+              <div class="stream__head" aria-hidden="true">
+                <span>Time</span><span>Tag</span><span>Enc</span
+                ><span>Message</span>
+              </div>
+              <div
+                class="stream__rows"
+                role="log"
+                aria-live="off"
+                aria-label="受信中の syslog（実演）"
+              ></div>
+            </div>
+          </div>
+        </div>
+
         <div class="wrap">
-          <h1>Veltrea Syslog Server</h1>
-          <p class="intro__lede">
-            syslog を受信して表示するだけの道具です。受信した
-            <b>1 通ごと</b>に文字コードを判定して復号するので、Shift_JIS の機器と
-            UTF-8 の機器が同じポートに混ざっていても日本語が化けません。
-            インストール不要の単一ファイル。
-          </p>
-          <div class="actions">
-            <a
-              class="btn"
-              href="https://github.com/veltrea/vlt-syslogd/releases/latest"
-              >v0.4.0 をダウンロード</a
-            >
-            <a class="btn btn--plain" href="manual.html">マニュアル</a>
-            <span class="meta">
-              Windows / macOS / Linux (x86_64)<br />
-              Rust 製・MIT ライセンス
-            </span>
+          <div class="gauges">
+            <div class="gauge">
+              <b>1</b><span class="readout">通ごとに判定</span>
+            </div>
+            <div class="gauge">
+              <b>5</b><span class="readout">符号化の決め方</span>
+            </div>
+            <div class="gauge">
+              <b>8</b><span class="readout">重大度</span>
+            </div>
+            <div class="gauge">
+              <b>3</b><span class="readout">動作形態</span>
+            </div>
+            <div class="gauge">
+              <b>0</b><span class="readout">インストール</span>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- 実物。ここがこのページの主。 -->
-      <div class="band">
+      <!-- ===== 復号 ===== -->
+      <section class="section" id="decode">
         <div class="wrap">
-          <figure>
-            <a href="assets/portable-main.png" target="_blank" rel="noopener">
-              <img
-                src="assets/portable-main.png"
-                width="1698"
-                height="989"
-                alt="Portable 版のログ画面。Time・Tag・Severity・Enc・Message の 5 列に、UTF-8 と Shift_JIS の日本語メッセージが混在して正しく表示されている。"
-              />
-            </a>
-            <figcaption>
-              <b>Portable 版のログ画面。</b>
-              UTF-8 と Shift_JIS の syslog を同時に受けているところ。v0.4.0 の
-              Windows 版配布バイナリを Windows 11 で動かして撮影しています。
-              <a href="assets/portable-main.png" target="_blank" rel="noopener"
-                >原寸で開く</a
-              >
-            </figcaption>
-          </figure>
-        </div>
-      </div>
+          <div class="section__head">
+            <h2>1 通ずつ、根拠を示して復号する</h2>
+            <p class="section__lede">
+              通信全体で 1 つの文字コードを決め打ちしません。判定に使った根拠は
+              <b>Enc</b> 欄にそのまま出るので、表示を信じてよいかどうかを
+              利用者の側で確かめられます。
+            </p>
+          </div>
 
-      <!-- 他と違う唯一の点 -->
-      <section class="section" id="encoding">
-        <div class="wrap">
-          <h2>文字コードは 1 通ごとに決める</h2>
-          <p class="section__lede">
-            通信全体で 1 つの文字コードを決め打ちするのではなく、届いた
-            1 通ずつを別々に判定します。判定に使った根拠は
-            <b>Enc</b> 欄にそのまま出るので、表示を信じてよいかどうかを
-            利用者の側で確かめられます。
-          </p>
-
-          <div class="enc">
-            <div>
-              <div class="enc__shot">
-                <img
-                src="assets/enc-column.png"
-                width="1180"
-                height="421"
-                alt="ログ画面の Severity・Enc・Message 列の拡大。Enc 欄に UTF-8、Shift_JIS、UTF-8 (MSG-SD/BOM-Missing) などが行ごとに異なって表示されている。"
-                />
+          <div class="decode">
+            <div class="hud">
+              <div class="hud__bar">
+                <span class="readout">受信例 / RFC 3164 / 本文 UTF-8</span>
               </div>
-              <p class="enc__aside">
-                重大度も色で分けています（<span class="sev sev--ok">Notice</span> ・
-                <span class="sev sev--warn">Warning</span> ・
-                <span class="sev sev--error">Error</span> ・
-                <span class="sev sev--debug">Debug</span>）。元のバイト列は捨てずに
-                持っているので、行を右クリックして <b>Copy as Hex</b>
-                で取り出せます。表示がおかしいと思ったとき、送信側とこちらの
-                どちらの問題かを切り分けられます。
-              </p>
+              <div class="hud__body">
+                <p class="decode__line decode__bytes">
+                  <span class="readout">届いたバイト列</span>
+                  3c 31 33 32 3e 61 75 74 68 3a 20 <b>e8 aa 8d e8 a8 bc e3 81 ab
+                  e5 a4 b1 e6 95 97 e3 81 97 e3 81 be e3 81 97 e3 81 9f</b> 3a 20 …
+                </p>
+                <p class="decode__line decode__bad">
+                  <span class="readout">符号化を1つに決め打ちした受信側</span>
+                  &lt;132&gt;auth: 隱崎ｨｼ縺ｫ螟ｱ謨励＠縺ｾ縺励◆: 繝ｦ繝ｼ繧ｶ繝ｼ admin
+                </p>
+                <p class="decode__line decode__good">
+                  <span class="readout">vlt-syslogd の表示</span>
+                  認証に失敗しました: ユーザー admin (3 回目)<span class="tagpill"
+                    >Enc: UTF-8</span
+                  >
+                </p>
+              </div>
             </div>
 
             <dl class="enc__list">
@@ -157,65 +184,71 @@
             </dl>
           </div>
 
+          <p style="margin-top: 1.75rem; max-width: 46em">
+            元のバイト列は捨てずに持っているので、行を右クリックして
+            <b>Copy as Hex</b> で取り出せます。表示がおかしいと思ったとき、
+            送信側とこちらのどちらの問題かを切り分けられます。
+          </p>
         </div>
       </section>
 
-      <!-- 三つの形 -->
-      <section class="section" id="shapes">
+      <!-- ===== 三つの形 ===== -->
+      <section class="section" id="units">
         <div class="wrap">
-          <h2>三つの形</h2>
-          <p class="section__lede">
-            syslog を読む部分は同じ実装で、動かし方だけが違います。
-            迷ったら Portable から。
-          </p>
-
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">形</th>
-                  <th scope="col">何をするもの</th>
-                  <th scope="col">待ち受け</th>
-                  <th scope="col">常駐</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Portable</td>
-                  <td>
-                    自分で UDP を待ち受ける単体の GUI。ダブルクリックで起動し、
-                    その場で受信が始まる。インストール不要。
-                  </td>
-                  <td><code>514/udp</code></td>
-                  <td>しない</td>
-                </tr>
-                <tr>
-                  <td>Server</td>
-                  <td>
-                    画面を持たない常駐エンジン。Windows サービス / launchd /
-                    systemd として OS 起動時から受信する。
-                  </td>
-                  <td>
-                    <code>514/udp</code><br /><code>5141/tcp</code><br /><code
-                      >5142/tcp</code
-                    >
-                  </td>
-                  <td>する</td>
-                </tr>
-                <tr>
-                  <td>Console</td>
-                  <td>
-                    常駐している Server に TCP で繋いで見る GUI。閉じても受信は
-                    止まらない。サービスの開始・停止もここから。
-                  </td>
-                  <td>—</td>
-                  <td>しない</td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="section__head">
+            <h2>同じエンジンを、三つの形で</h2>
+            <p class="section__lede">
+              syslog を読む部分は同じ実装で、動かし方だけが違います。
+              迷ったら Portable から。
+            </p>
           </div>
 
-          <p style="margin-top: 1.5rem">
+          <div class="units">
+            <div class="unit">
+              <h3>Portable</h3>
+              <p class="unit__id">vlt-syslogd-portable</p>
+              <p>
+                自分で UDP を待ち受ける単体の GUI。ダブルクリックで起動し、
+                その場で受信が始まります。インストールもサービス登録も要りません。
+              </p>
+              <dl>
+                <div><dt>Bind</dt><dd>514/udp</dd></div>
+                <div><dt>Priv</dt><dd>なし（Windows）</dd></div>
+                <div><dt>Resident</dt><dd>no</dd></div>
+              </dl>
+            </div>
+
+            <div class="unit">
+              <h3>Server</h3>
+              <p class="unit__id">vlt-syslogd-srv</p>
+              <p>
+                画面を持たない常駐エンジン。Windows サービス / launchd / systemd
+                として OS の起動と同時に受信を始め、ファイルへ書き出します。
+              </p>
+              <dl>
+                <div><dt>Bind</dt><dd>514/udp</dd></div>
+                <div><dt>Stream</dt><dd>5141/tcp</dd></div>
+                <div><dt>Ctrl</dt><dd>5142/tcp</dd></div>
+                <div><dt>Resident</dt><dd>yes</dd></div>
+              </dl>
+            </div>
+
+            <div class="unit">
+              <h3>Console</h3>
+              <p class="unit__id">vlt-syslogd-console</p>
+              <p>
+                常駐している Server に TCP で繋いで見る GUI。閉じても受信は
+                止まりません。サービスの開始・停止もここから。
+              </p>
+              <dl>
+                <div><dt>Link</dt><dd>127.0.0.1:5141</dd></div>
+                <div><dt>Ctrl</dt><dd>127.0.0.1:5142</dd></div>
+                <div><dt>Resident</dt><dd>no</dd></div>
+              </dl>
+            </div>
+          </div>
+
+          <p style="margin-top: 1.5rem; max-width: 46em">
             配信 (5141) と制御 (5142) は既定でループバック限定、かつ共有トークンで
             保護されています。詳しくは<a href="manual.html#network"
               >マニュアルのネットワークの節</a
@@ -224,13 +257,99 @@
         </div>
       </section>
 
-      <!-- 入手して動かす -->
+      <!-- ===== 実機 ===== -->
+      <section class="section" id="plates">
+        <div class="wrap">
+          <div class="section__head">
+            <h2>実機の画面</h2>
+            <p class="section__lede">
+              v0.4.0 の Windows 版配布バイナリを Windows 11 上で動かし、
+              UTF-8 と Shift_JIS を混ぜた syslog を流して撮影したものです。
+            </p>
+          </div>
+
+          <figure class="plate hud">
+            <div class="plate__frame">
+              <a href="assets/portable-main.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/portable-main.png"
+                  width="1698"
+                  height="989"
+                  alt="Portable 版のログ一覧。Time・Tag・Severity・Enc・Message の 5 列に、UTF-8 と Shift_JIS の日本語メッセージが混在して正しく表示されている。"
+                />
+              </a>
+            </div>
+            <figcaption class="plate__caption">
+              <b>Portable — ログ一覧</b>
+              Enc 欄には <code>UTF-8</code>・<code>Shift_JIS</code>・<code
+                >Shift_JIS (MSG-SD/BOM-Missing)</code
+              >
+              が同じ画面に混ざっています。すべて別々の送信元・別々の形式で
+              届いたものです。
+              <a class="plate__full" href="assets/portable-main.png" target="_blank" rel="noopener"
+                >原寸で開く</a
+              >
+            </figcaption>
+          </figure>
+
+          <div class="plate plate--split">
+            <div class="hud">
+              <div class="plate__frame">
+                <a href="assets/portable-prefs.png" target="_blank" rel="noopener">
+                  <img
+                    src="assets/portable-prefs-detail.png"
+                    width="760"
+                    height="215"
+                    alt="環境設定ダイアログ。待ち受けポート 514 と、ログ保存先のパスが並んでいる。"
+                  />
+                </a>
+              </div>
+            </div>
+            <div class="plate__caption">
+              <b>環境設定</b>
+              待ち受けポートとログの保存先だけの、二項目の設定です。
+              514 が既に使われている環境では、ここで別のポートに変えられます。
+              起動時の bind の成否は、ログ一覧の 1 行目にそのまま出ます。
+              <a class="plate__full" href="assets/portable-prefs.png" target="_blank" rel="noopener"
+                >全体を開く</a
+              >
+            </div>
+          </div>
+
+          <figure class="plate hud">
+            <div class="plate__frame">
+              <a href="assets/console-main.png" target="_blank" rel="noopener">
+                <img
+                  src="assets/console-main.png"
+                  width="1698"
+                  height="989"
+                  alt="Console が Server に接続している画面。上部に緑の「受信中 (127.0.0.1:5141)」表示と、サービスの開始・停止・再起動ボタンが並ぶ。"
+                />
+              </a>
+            </div>
+            <figcaption class="plate__caption">
+              <b>Console — 常駐 Server に接続中</b>
+              緑の「● 受信中」は配信チャネルが繋がっている状態です。
+              サービスの開始 / 停止 / 再起動もここから行えます（この画面は
+              サービス登録せずエンジンを直接起動しているため、サービス状態は
+              「未インストール」と出ています）。
+              <a class="plate__full" href="assets/console-main.png" target="_blank" rel="noopener"
+                >原寸で開く</a
+              >
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ===== 入手 ===== -->
       <section class="section" id="install">
         <div class="wrap">
-          <h2>入手して動かす</h2>
-          <p class="section__lede">
-            最新は v0.4.0。用途に合うものだけ落としてください。
-          </p>
+          <div class="section__head">
+            <h2>入手して動かす</h2>
+            <p class="section__lede">
+              最新は v0.4.0。用途に合うものだけ落としてください。
+            </p>
+          </div>
 
           <div class="table-scroll">
             <table>
@@ -340,10 +459,12 @@ $u.Send($b, $b.Length, '127.0.0.1', 514) | Out-Null; $u.Close()</code></pre>
         </div>
       </section>
 
-      <!-- 正直な制限 -->
+      <!-- ===== 制限 ===== -->
       <section class="section" id="limits">
         <div class="wrap">
-          <h2>先に言っておくこと</h2>
+          <div class="section__head">
+            <h2>先に言っておくこと</h2>
+          </div>
           <div class="notes">
             <div class="note">
               <h3>macOS / Linux の 514 番は特権ポート</h3>
@@ -353,7 +474,6 @@ $u.Send($b, $b.Length, '127.0.0.1', 514) | Out-Null; $u.Close()</code></pre>
                 <code>127.0.0.1:514</code> のように特定のインターフェースを
                 指定すると root が要ります。Linux では root か
                 <code>CAP_NET_BIND_SERVICE</code> が必要です。
-                1024 番以上に変えれば済む話でもあります。
               </p>
             </div>
             <div class="note">
@@ -431,10 +551,33 @@ $u.Send($b, $b.Length, '127.0.0.1', 514) | Out-Null; $u.Close()</code></pre>
 
         <div class="colophon__end">
           <span>© 2026 veltrea — MIT License</span>
-          <span>v0.4.0 対応</span>
+          <span>見出し書体 Chakra Petch (SIL OFL 1.1)</span>
+          <span>v0.4.0</span>
         </div>
       </div>
     </footer>
+
+    <!-- 卓に流す実演用のデータ。撮影に使った demo feed と同じ内容。 -->
+    <script type="application/json" id="feed-data">
+      [
+        {"k":"ok","tag":"sysconf","enc":"UTF-8","msg":"構成をフラッシュメモリに保存しました (rev.184)"},
+        {"k":"ok","tag":"link","enc":"Shift_JIS","msg":"GigabitEthernet0/1 がリンクアップしました"},
+        {"k":"ok","tag":"vpn","enc":"UTF-8 (SD/NoBOM)","msg":"IPsec SA established with peer 192.0.2.44 (tunnel-osaka)"},
+        {"k":"warn","tag":"auth","enc":"Shift_JIS","msg":"認証に失敗しました: ユーザー admin (3 回目)"},
+        {"k":"ok","tag":"smbd","enc":"UTF-8","msg":"共有フォルダ 営業部_2026年度 をマウントしました"},
+        {"k":"error","tag":"chassis","enc":"Shift_JIS","msg":"ファンユニット2 の回転数が低下しています (1,180 rpm)"},
+        {"k":"ok","tag":"dhcp","enc":"UTF-8","msg":"DHCPACK to 192.0.2.115 (lease 86400s)"},
+        {"k":"debug","tag":"smbd","enc":"UTF-8","msg":"session setup: workstation=PC-0421 dialect=SMB3_11"},
+        {"k":"ok","tag":"envmon","enc":"Shift_JIS (SD/NoBOM)","msg":"温度センサー: 筐体内 42℃ (正常範囲)"},
+        {"k":"error","tag":"power","enc":"Shift_JIS","msg":"電源ユニット1 に異常を検出。冗長構成が失われました"},
+        {"k":"error","tag":"power","enc":"Shift_JIS","msg":"UPS がバッテリー運転に切り替わりました (残り 18 分)"},
+        {"k":"ok","tag":"backup","enc":"UTF-8","msg":"日次バックアップ完了 — 12,884 files / 41.2 GB"},
+        {"k":"ok","tag":"stp","enc":"UTF-8","msg":"Topology change received on Po1"},
+        {"k":"ok","tag":"policy","enc":"Shift_JIS","msg":"ポリシー \"内部→DMZ\" を適用しました"},
+        {"k":"warn","tag":"wlan","enc":"UTF-8","msg":"AP-3F: クライアント 2.4GHz 帯の混雑を検出 (利用率 78%)"},
+        {"k":"ok","tag":"printer","enc":"Shift_JIS","msg":"印刷ジョブ 見積書_2026-08.pdf を受け付けました"}
+      ]
+    </script>
 
     <script src="site.js" defer></script>
   </body>
