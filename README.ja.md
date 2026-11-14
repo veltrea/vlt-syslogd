@@ -1,107 +1,172 @@
 # Veltrea Syslog Server
 
-*ワークスペース · パッケージ名: `vlt-syslogd`*
+[English](README.md) · 日本語 · [한국어](README.ko.md) · [简体中文](README.zh.md) · [繁體中文](README.tw.md) · [Tiếng Việt](README.vi.md)
 
-2バイト文字(CJK)環境での高い視認性と実用性を追求した、Windows / macOS 対応 Syslog ソリューション。
+**受信した 1 通ごとに Shift_JIS と UTF-8 を判定して復号します。同じポートに符号化が混ざっていても、文字化けしません。**
 
-## スクリーンショット
+**[解説サイト](https://veltrea.github.io/vlt-syslogd/)** · [English page](https://veltrea.github.io/vlt-syslogd/index.en.html) · **[リリース v0.4.0](https://github.com/veltrea/vlt-syslogd/releases/tag/v0.4.0)**
 
-![日本語(CJK)メッセージがきれいに表示されたメイン画面](DOCS/assets/main_window.png)
+![Enc 列に UTF-8 と Shift_JIS と Shift_JIS (MSG-SD/BOM-Missing) が並んだ Portable のログ画面](DOCS/assets/portable-main.png)
 
-*メイン画面 — リアルタイムのログ表示。ASCII と並んで日本語などのマルチバイト(CJK)メッセージが正しく表示されます。*
+*サイトと同じ画面です。v0.4.0 の Windows 版。Enc 列がその行の判定で、`UTF-8`、`Shift_JIS`、RFC 5424 の構造化データが文字集合を宣言したときの `Shift_JIS (MSG-SD/BOM-Missing)` が出ます。行を右クリックして **Copy as Hex** を選ぶと、元のバイト列を16進でコピーできます。*
 
-![待ち受けポートとログ保存先を設定する環境設定ダイアログ](DOCS/assets/preferences_dialog.png)
+最新は **v0.4.0**。Windows、macOS、Linux (x86_64) 向けです。どれにするか迷ったら **Portable** から始めてください。
 
-*環境設定 — 待ち受けポートとログの保存先を設定できます。*
+画面の文言は日本語です。Windows と Linux のメニューは「ファイル(File)」「編集(Edit)」「ヘルプ(Help)」と併記しています。
 
-## プロジェクトの構成と目的
+## 三つの形
 
-本プロジェクトでは、用途に合わせて 2 つの形態を提供するためにディレクトリを分離・整理しました。
+syslog を読む考え方は同じで、動かし方だけが違います。
 
-### 1. [Portable](./Portable) (Released v0.3.0)
-- **ステータス**: リリース済み。健康と気力が続く限り、保守を継続。
-- **コンセプト**: 「USBメモリに忍ばせておく、エンジニアの万能ナイフ」。
-- **特徴**: GUI とサーバーエンジンを一体化した単一実行ファイル。インストール不要、インターネット不要で、現場のデバッグや一時的なログ収集に最高の機動力を提供します。
-- **想い**: 日々忙しく働くエンジニアとして、「こういうのがあれば便利だな」と思って自作しました。同じような仕事をしている皆さんにも、ぜひ気軽に使ってもらいたいと考えています。
-
-### 2. [Server](./Server) (Under Development)
-- **ステータス**: 次期目標として開発中。
-- **コンセプト**: 「Windows サーバーでの本格安定運用」。
-- **特徴**: Windows サービスとしてバックグラウンドで動作する「エンジン」と、必要時のみ接続する「監視用フロントエンド」を分離。
-- **目的**: 常時稼働が求められる本番運用環境において、堅牢なログ収集基盤を提供します。
-
----
-
-## 開発の背景
-
-長年愛用してきた既存の Windows 用軽量 Syslog サーバーが抱えていた「日本語表示の限界」を克服するため、Rust 言語でゼロから構築しました。
-
-詳細は各ディレクトリの README を参照してください。
-
----
-
-## ダウンロード（macOS）
-
-`./Portable/build-macos.sh` を実行すると、ad-hoc 署名済みの macOS バンドルが `dist/` に作られます。GUI には**データの置き場所だけが違う**2形態があり、使い方に合う方を選びます:
-
-| 形態 | データ保存先 | 向いている用途 | 成果物 |
+| | Portable | Server | Console |
 |---|---|---|---|
-| **App** | `~/Library/Application Support/vlt-syslogd/` | `/Applications` に入れて日常的に使う | `vlt-syslogd-macos-app-v<ver>.zip` |
-| **Portable** | `.app` 自身の隣 | USB に入れて持ち歩く・システムを汚さない | `vlt-syslogd-macos-portable-v<ver>.zip` |
+| バイナリ | `vlt-syslogd-portable` | `vlt-syslogd-srv` | `vlt-syslogd-console` |
+| 役割 | 自分で UDP を開く GUI。インストーラもサービス登録も要りません。 | 画面のないエンジン。Windows サービス、launchd の LaunchDaemon、systemd のいずれか。起動と同時に受けてファイルへ書きます。 | 動いている Server に TCP で繋がる GUI。閉じても受信は止まりません。サービスの開始・停止・再起動もこの画面から。 |
+| ポート | UDP。既定は `0.0.0.0:514` | UDP `514`（syslog）。TCP `5141`（Console への配信）と TCP `5142`（制御）は既定で `127.0.0.1` | Server の配信先と制御先へ接続 |
+| v0.4.0 の配布物 | Windows、macOS、Linux x86_64 | Windows と macOS。Linux はソースからビルド（`Server/install-linux.sh` はリポジトリにある。このリリースに Linux 用 Server バイナリはない） | Windows と macOS。Linux はソースからビルド |
 
-どちらも管理者権限なしでどこからでも起動できます。macOS（Mojave 以降）では、標準の syslog ポート `514` を `0.0.0.0` で待ち受けるのに root は**不要**なので、ダブルクリックでそのまま使えます。（`127.0.0.1:514` のように*特定*インターフェースに bind する場合は root が必要 — 下の待ち受けポートの項を参照。）
+**App** と **Portable** は同じ GUI です。データの置き場所だけが違います。
 
-ダウンロードしたアプリは初回起動時に Gatekeeper の quarantine が付きます。特に **Portable** 版はデータを `.app` の隣に置くため、quarantine 中は App Translocation でそれが壊れます。次のコマンドで一度だけ quarantine を外してください:
+| 形態 | データディレクトリ |
+|---|---|
+| **App** | Windows は `%APPDATA%\vlt-syslogd`、macOS は `~/Library/Application Support/vlt-syslogd`、Linux は `$XDG_DATA_HOME/vlt-syslogd` または `~/.local/share/vlt-syslogd` |
+| **Portable** | 実行ファイルの隣。macOS では `.app` の隣（USB に入れて持ち歩く。システムの中には書かない） |
+
+どちらの形態でも `VLT_SYSLOGD_DATA_DIR` があればそちらを使います。Server のデータの既定はシステム領域です。`C:\ProgramData\vlt-syslogd`、`/usr/local/var/vlt-syslogd`、`/var/lib/vlt-syslogd`。
+
+環境設定（**ファイル → 環境設定…**）にあるのは二つだけです。待ち受けポートとログ保存先。**適用** で保存します。
+
+## v0.4.0 を入手して、1 通送る
+
+次のファイルは [v0.4.0 のリリース資産](https://github.com/veltrea/vlt-syslogd/releases/tag/v0.4.0) です。試しの送信先は、ログの 1 行目に出たポートにしてください。`Listening on 0.0.0.0:514 (UDP)` と出ていれば、そのポートは開いています。
+
+常駐させる、別の機器から受ける、という先は [インストールガイド](DOCS/INSTALL.ja.md) にあります。
+
+### Windows
+
+| 形 | ファイル |
+|---|---|
+| Portable | [vlt-syslogd-portable-windows-v0.4.0.zip](https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-portable-windows-v0.4.0.zip) → `vlt-syslogd-portable.exe` |
+| App | [vlt-syslogd-app-windows-v0.4.0.zip](https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-app-windows-v0.4.0.zip) → `vlt-syslogd-windows-x86_64-app-v0.4.0.exe` |
+| Server | [vlt-syslogd-srv-windows-v0.4.0.zip](https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-srv-windows-v0.4.0.zip) → `vlt-syslogd-srv.exe` と `install-windows.ps1` |
+| Console | [vlt-syslogd-console-windows-v0.4.0.zip](https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-console-windows-v0.4.0.zip) → `vlt-syslogd-console.exe` |
+
+展開して Portable の exe をダブルクリックします。SmartScreen が出たら **詳細情報** → **実行**。UDP 514 の bind に管理者権限は要りません。
+
+```powershell
+$u = New-Object System.Net.Sockets.UdpClient
+$b = [Text.Encoding]::UTF8.GetBytes('<132>auth: 認証に失敗しました')
+$u.Send($b, $b.Length, '127.0.0.1', 514) | Out-Null; $u.Close()
+```
+
+行が増えれば届いています。この本文は BOM のない UTF-8 で、このプログラムが想定している普通の形です。
+
+### macOS
+
+| 形 | ファイル |
+|---|---|
+| Portable | [vlt-syslogd-macos-portable-v0.4.0.dmg](https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-macos-portable-v0.4.0.dmg) または [.zip](https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-macos-portable-v0.4.0.zip) → `vlt-syslogd-portable.app` |
+| App | [vlt-syslogd-macos-app-v0.4.0.dmg](https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-macos-app-v0.4.0.dmg) または [.zip](https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-macos-app-v0.4.0.zip) → `vlt-syslogd.app` |
+| Server | [vlt-syslogd-srv-macos-v0.4.0.tar.gz](https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-srv-macos-v0.4.0.tar.gz) → `vlt-syslogd-srv` と `install-macos.sh` |
+| Console | [vlt-syslogd-console-macos-app-v0.4.0.zip](https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-console-macos-app-v0.4.0.zip) → `vlt-syslogd-console.app` |
+
+ビルドは ad-hoc 署名で、公証はしていません。ダウンロードしたアプリには Gatekeeper の隔離属性が付きます。一度外すか、右クリックして **開く** を選んでください。
 
 ```bash
 xattr -dr com.apple.quarantine vlt-syslogd-portable.app
 ```
 
-または初回だけアプリを右クリック →「開く」。ポートが既に使われている場合や、起動時から常駐させたい場合は Server 版を使ってください。
-
-## macOS でのビルドと実行
-
-GUI 版（`Portable`）は Windows / macOS で動作します。日本語フォントはプラットフォームごとに自動判定され、macOS ではヒラギノ角ゴシックを読み込みます。そのため、追加設定なしで2バイト文字が正しく表示されます。
-
-### 前提条件
-
-- Rust 1.85 以降（各クレートは `edition = "2024"` を使用）。
-
-### ビルド
+Portable はデータを `.app` の隣に置きます。隔離属性が残っていると App Translocation でその場所が見えなくなります。日本語フォントは macOS に入っているヒラギノを使います。
 
 ```bash
-# GUI（単一バイナリ）。既定は App 版、feature を付けると Portable 版。
-cd Portable
-cargo build --release                       # App 版（データは ~/Library/Application Support）
-cargo build --release --features portable   # Portable 版（データはバイナリの隣）
+printf '<34>Oct 11 22:14:15 myhost myapp: hello' | nc -u -w1 127.0.0.1 514
 ```
 
-App 版・Portable 版の両方を、配布できる ad-hoc 署名済み macOS `.app` + zip として `dist/` に作るには:
+macOS の `logger` はローカルのシステムログへ書きます。ホストと UDP ポートは指定できません。こちらでは `nc` を使ってください。514 が開いたと思い込む前に [ポート 514](#ポート-514) を見てください。
+
+### Linux (x86_64)
+
+このリリースに入っているのは GUI だけです。Server と Console のビルド済みバイナリはありません。必要ならソースからビルドします（[BUILD.ja.md](DOCS/BUILD.ja.md)、[INSTALL.linux.ja.md](DOCS/INSTALL.linux.ja.md)）。
+
+| 形 | ファイル |
+|---|---|
+| Portable | [vlt-syslogd-linux-x86_64-portable-v0.4.0](https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-linux-x86_64-portable-v0.4.0) |
+| App | [vlt-syslogd-linux-x86_64-app-v0.4.0](https://github.com/veltrea/vlt-syslogd/releases/download/v0.4.0/vlt-syslogd-linux-x86_64-app-v0.4.0) |
+
+動的リンクの x86_64 ELF です。ウィンドウを開くにはディスプレイ（X11 または Wayland）が要ります。v0.4.0 のリリースノートは OpenGL も要件に挙げています。
 
 ```bash
-./Portable/build-macos.sh
+chmod +x vlt-syslogd-linux-x86_64-portable-v0.4.0
+./vlt-syslogd-linux-x86_64-portable-v0.4.0
 ```
-
-### 待ち受けポート
-
-514 番は標準の syslog ポートです。macOS（Mojave 以降）では `0.0.0.0` への bind に root は**不要**で、root が要るのは `127.0.0.1` のような*特定*インターフェースへの bind だけです。Linux では 1024 未満に root または `CAP_NET_BIND_SERVICE` が必要です。bind の成否（成功・失敗）はログ表示の最初の行に表示され、失敗時は環境設定ウィンドウ（設定 →「環境設定…」）で別のポートを指定できます。
 
 ```bash
-# Option A: listen on the standard port 514 with root
-sudo ./target/release/vlt-syslogd-portable
-
-# Option B: listen on a non-privileged port without root
-VLT_SYSLOGD_BIND=0.0.0.0:5514 ./target/release/vlt-syslogd-portable
+printf '<34>Oct 11 22:14:15 myhost myapp: hello' | nc -u -w1 127.0.0.1 514
 ```
 
-`VLT_SYSLOGD_BIND` は GUI 版の待ち受けアドレスを上書きします。
-
-### サーバーエンジン（macOS ではコンソール常駐デーモン）
-
-`Server` クレートは Windows ではサービスとして動作します。macOS では、同じエンジンがフォアグラウンドのコンソール常駐デーモンとしてビルド・動作します（`launchd` での管理を想定）。待ち受けアドレスは `config.toml` から読み込まれ、初回起動時に OS 標準のデータ領域へ生成されます（macOS: `/usr/local/var/vlt-syslogd`、Linux: `/var/lib/vlt-syslogd`、Windows: `C:\ProgramData\vlt-syslogd`）。場所を変えたいときは環境変数 `VLT_SYSLOGD_DATA_DIR` で上書きします。
+util-linux の `logger` は UDP で送れます。macOS の `logger` にはこの指定はありません。Linux での形です。
 
 ```bash
-cd Server
-cargo build --release
-./target/release/vlt-syslogd-srv run
+logger -n 127.0.0.1 -P 514 -d 'hello from logger'
 ```
+
+日本語を出すには、GUI が探す CJK フォントが要ります。Noto Sans CJK（`/usr/share/fonts` 以下の `NotoSansCJK-Regular.ttc`）か、IPA ゴシック（`/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf`）です。無いと □ になります。Debian / Ubuntu の `fonts-noto-cjk` は、そのうち先頭のパスへ Noto を置きます。
+
+## 先に知っておくこと
+
+### ポート 514
+
+ログの 1 行目が bind の結果です。失敗の行が出ているあいだ、514 へ送っても画面には出ません。
+
+- **Windows。** UDP 514 の bind に管理者は要りません。インストール時に管理者を求めるのは、サービスを登録するときだけです。
+- **Linux。** 1024 未満は root か `CAP_NET_BIND_SERVICE` が要ります。Portable のバイナリなら次です。
+
+  ```bash
+  sudo setcap 'cap_net_bind_service=+ep' ./vlt-syslogd-linux-x86_64-portable-v0.4.0
+  ```
+
+  `Server/install-linux.sh` は root で動く systemd ユニットを入れます。ユニットファイルには `AmbientCapabilities=CAP_NET_BIND_SERVICE` を使うコメントアウトされた例もあります。
+- **macOS。** root でない状態で `0.0.0.0:514` を bind すると `EACCES` になった、という記録が [DOCS/portable_macos_port_behavior.md](DOCS/portable_macos_port_behavior.md) にあります。アプリ内のヒントは、macOS のワイルドカード bind には root が要らない、とまだ表示します。信じるのはログの 1 行目です。
+
+bind に失敗すると、バナーには **5514** が入ります。**待ち受け開始** はそのセッションだけそのポートで受け、保存はしません。残すには **環境設定** で **適用** するか、`VLT_SYSLOGD_BIND=0.0.0.0:5514` を付けて起動します。試しの送信は、ログの行が示しているポートへ向けてください。macOS で 514 そのものを掴むには、管理者権限で Portable を起動するか、root の LaunchDaemon として入る Server（`com.veltrea.vlt-syslogd-srv`）を使います。
+
+### macOS の Gatekeeper
+
+これらのビルドの後ろに Apple Developer アカウントはありません。初回は、右クリック → **開く**、または上の `com.apple.quarantine` の除去が済むまで止まります。
+
+### サービスが動いていても、届かないことがある
+
+別の機器から届くのは、`bind_addr` が `0.0.0.0` または LAN のアドレスで、かつファイアウォールが UDP 514 を通しているときです。配信（`5141`）と制御（`5142`）は、変えない限りループバックのままです。この二つをマシンの外へ出すと、Server の設定を書き換えられる `set_config` も出ます。別のマシンの Console を使うときは、インストールガイドが SSH トンネルを勧めています。
+
+```powershell
+# Windows。管理者の PowerShell
+New-NetFirewallRule -DisplayName "vlt-syslogd 514/udp" -Direction Inbound -Protocol UDP -LocalPort 514 -Action Allow
+```
+
+```bash
+# Linux
+sudo ufw allow 514/udp
+# firewalld:
+sudo firewall-cmd --permanent --add-port=514/udp && sudo firewall-cmd --reload
+```
+
+macOS のアプリケーションファイアウォールはアプリ単位です。尋ねられたら `vlt-syslogd-srv` の着信を許可します。
+
+## 背景
+
+日本語がきちんと出ない、軽い Windows 用 syslog サーバーを長く使っていたので、Rust で一から書きました。1 通ごとに復号します。BOM、RFC 5424 の構造化データにある `charset`、あるいはバイト列そのもの（`chardetng` による Shift_JIS の推定を含む）です。Enc 列はその判定です。保守は、健康と気力が続くあいだ続けます。作者は veltrea です。
+
+USB メモリに入れておく単一ファイル、という Portable の使い方は今もそのままです。
+
+## ドキュメント
+
+| | |
+|---|---|
+| インストール | [INSTALL.ja.md](DOCS/INSTALL.ja.md) — [Windows](DOCS/INSTALL.windows.ja.md) · [macOS](DOCS/INSTALL.macos.ja.md) · [Linux](DOCS/INSTALL.linux.ja.md) |
+| ポートとサービス名 | [REFERENCE.ja.md](DOCS/REFERENCE.ja.md) |
+| ビルド | [BUILD.ja.md](DOCS/BUILD.ja.md) — `cargo build --release --workspace`（edition 2024） |
+| 符号化のメモ | [syslog_verification_report.ja.md](DOCS/syslog_verification_report.ja.md) |
+
+## ライセンス
+
+[MIT](LICENSE)。Copyright (c) 2026 veltrea。
